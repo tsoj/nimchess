@@ -1,0 +1,1 @@
+import nimchess/[bitboard, strchess,
