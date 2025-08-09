@@ -3,7 +3,6 @@ import nimchess/[position, strchess, types]
 import testData/exampleFens
 
 suite "Zobrist Key Tests":
-
   test "No Zobrist key collisions":
     for fen1 in someFens:
       for fen2 in someFens:
@@ -28,7 +27,8 @@ suite "Zobrist Key Tests":
         p1.halfmoveClock = p2.halfmoveClock
         p1.halfmovesPlayed = p2.halfmovesPlayed
 
-        let samePawnStructure = (p1[pawn] == p2[pawn] and p1[white, pawn] == p2[white, pawn])
+        let samePawnStructure =
+          (p1[pawn] == p2[pawn] and p1[white, pawn] == p2[white, pawn])
         let samePawnKey = (p1.pawnKey == p2.pawnKey)
 
         check samePawnStructure == samePawnKey

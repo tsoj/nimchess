@@ -4,7 +4,6 @@ import testdata/examplefens
 import std/strutils
 
 suite "FEN Parsing Tests":
-
   test "FEN parsing and regeneration":
     for fen in someFens:
       let
@@ -15,7 +14,8 @@ suite "FEN Parsing Tests":
           else:
             fen.len
 
-      check fen[0 ..< fenTestLen] == position.fen(alwaysShowEnPassantSquare = true)[0 ..< fenTestLen]
+      check fen[0 ..< fenTestLen] ==
+        position.fen(alwaysShowEnPassantSquare = true)[0 ..< fenTestLen]
 
   test "Chess960 FEN conversion":
     const

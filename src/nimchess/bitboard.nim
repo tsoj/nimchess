@@ -24,10 +24,7 @@ func empty*(bitboard: Bitboard): bool =
   bitboard == 0.Bitboard
 
 func toSquare*(x: Bitboard): Square =
-  if x.empty:
-    noSquare
-  else:
-    x.uint64.countTrailingZeroBits.Square
+  if x.empty: noSquare else: x.uint64.countTrailingZeroBits.Square
 
 func toBitboard*(square: Square): Bitboard =
   if square == noSquare:
@@ -52,7 +49,6 @@ func `$`*(b: Bitboard): string =
       none(string)
   )
 
-
 func ranks*(square: Square): Bitboard =
   const ranksTable: array[a1 .. h8, Bitboard] = block:
     var ranks: array[a1 .. h8, Bitboard]
@@ -71,7 +67,6 @@ func files*(square: Square): Bitboard =
     files
   filesTable[square]
 
-
 func mirrorVertically*(bitboard: Bitboard): Bitboard =
   result = 0.Bitboard
   swapEndian64(addr result, unsafeAddr bitboard)
@@ -85,7 +80,6 @@ func mirrorHorizontally*(bitboard: Bitboard): Bitboard =
       shiftAmount = 7 - 2 * i
     result = result or ((bitboard and f1) shl shiftAmount)
     result = result or ((bitboard and f2) shr shiftAmount)
-
 
 proc attackForSquareAndKey(
     hashKey: uint8,
@@ -129,8 +123,6 @@ func hashkeyAntiDiagonal(square: Square, occupancy: Bitboard): uint8 =
   (((((occupancy and antiDiagonals[square]).uint64 * files(a1).uint64) shr 56) shr 1) and 0b111111).uint8
 #!fmt: on
 
-
-
 proc attackTable(
     dirs: array[2, int], hashKeyFn: (Square, Bitboard) -> uint8
 ): array[a1 .. h8, array[64, Bitboard]] =
@@ -140,7 +132,6 @@ proc attackTable(
   )
 
 proc kingKnightAttackTable(a1Proto: Bitboard): array[a1 .. h8, Bitboard] =
-
   collect64(
     proc(sourceSq: int): Bitboard =
       result = 0.Bitboard
@@ -216,9 +207,11 @@ func mask5x5*(square: Square): Bitboard =
   table[square]
 
 func homeRank*(color: Color): Bitboard =
-  case color:
-  of white: ranks(a1)
-  of black: ranks(a8)
+  case color
+  of white:
+    ranks(a1)
+  of black:
+    ranks(a8)
 
 func attackMaskPawnQuiet*(square: Square, color: Color): Bitboard =
   attackTablePawnQuiet(color, square)
@@ -243,7 +236,7 @@ func attackMaskQueen*(square: Square, occupancy: Bitboard): Bitboard =
 func attackMaskKing*(square: Square, occupancy: Bitboard): Bitboard =
   kingAttackTable[square]
 
-func attackMask*(piece: knight..king, square: Square, occupancy: Bitboard): Bitboard =
+func attackMask*(piece: knight .. king, square: Square, occupancy: Bitboard): Bitboard =
   const attackFunctions = [
     knight: attackMaskKnight,
     bishop: attackMaskBishop,

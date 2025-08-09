@@ -4,7 +4,7 @@ import std/[strutils, options, strformat]
 
 export move, position
 
-func fen*(position: Position, alwaysShowEnPassantSquare: bool = false ): string =
+func fen*(position: Position, alwaysShowEnPassantSquare: bool = false): string =
   result = ""
   var emptySquareCounter = 0
   for rank in countdown(7, 0):
@@ -102,7 +102,8 @@ func toMove*(s: string, position: Position): Move =
     if move.source == source and move.promoted == promoted:
       if move.target == target:
         return move
-      if move.isCastling and target == kingTarget[position.us][move.castlingSide(position)] and
+      if move.isCastling and
+          target == kingTarget[position.us][move.castlingSide(position)] and
           not position.isChess960:
         return move
   raise newException(ValueError, "Move is illegal: " & s)
@@ -188,7 +189,11 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
     let rookSource =
       case castlingChar
       of 'K', 'k', 'Q', 'q':
-        let (makeStep, atEdge) = if castlingChar in ['K', 'k']: (right, isRightEdge) else: (left, isLeftEdge)
+        let (makeStep, atEdge) =
+          if castlingChar in ['K', 'k']:
+            (right, isRightEdge)
+          else:
+            (left, isLeftEdge)
         var
           square = kingSquare
           rookSource = noSquare

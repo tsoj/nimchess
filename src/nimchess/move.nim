@@ -105,7 +105,7 @@ func promoted*(move: Move): Piece =
 func isCapture*(move: Move): bool =
   move.moveType in [
     captureMove, capturePromotionKnightMove, capturePromotionBishopMove,
-    capturePromotionRookMove, capturePromotionQueenMove, enPassantMove
+    capturePromotionRookMove, capturePromotionQueenMove, enPassantMove,
   ]
 
 func isTactical*(move: Move): bool =
@@ -156,8 +156,8 @@ func enPassantTargetSquare*(move: Move, position: Position): Square =
 
   if move.moved(position) == pawn and
       not empty(move.source.toBitboard and ranks(a2.flipOrNot())) and
-        not empty(move.target.toBitboard and ranks(a4.flipOrNot())):
-          toSquare(ranks(a3.flipOrNot()) and files(move.source))
+      not empty(move.target.toBitboard and ranks(a4.flipOrNot())):
+    toSquare(ranks(a3.flipOrNot()) and files(move.source))
   else:
     noSquare
 
@@ -224,8 +224,8 @@ func isPseudoLegal*(position: Position, move: Move): bool =
         if not empty(occupancy and attackMaskPawnQuiet(source, us)):
           return false
         if empty(
-          move.enPassantTargetSquare(position).toBitboard and attackMaskPawnQuiet(target, enemy) and
-            attackMaskPawnQuiet(source, us)
+          move.enPassantTargetSquare(position).toBitboard and
+            attackMaskPawnQuiet(target, enemy) and attackMaskPawnQuiet(source, us)
         ):
           return false
       elif move.enPassantTargetSquare(position) != noSquare:
@@ -279,7 +279,9 @@ func doNullMove*(position: Position): Position =
 
   assert result.zobristKeysAreOk
 
-func doMove*(position: Position, move: Move, allowNullMove: static bool = false): Position =
+func doMove*(
+    position: Position, move: Move, allowNullMove: static bool = false
+): Position =
   when allowNullMove:
     if move.isNoMove:
       return position.doNullMove()

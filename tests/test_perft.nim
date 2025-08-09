@@ -20,7 +20,6 @@ proc testPerft(usePseudoLegalTest: bool, maxNodes: int) =
       check perftResult == trueNumNodes
 
 suite "Perft Tests":
-
   test "Perft correctness":
     testPerft(usePseudoLegalTest = false, maxNodes = maxNumPerftNodes)
 

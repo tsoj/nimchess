@@ -217,7 +217,7 @@ func legalMoves*(position: Position): seq[Move] =
   doAssert pseudoLegalMoves.len > numMoves
 
   result = newSeqOfCap[Move](numMoves)
-  for move in pseudoLegalMoves[0..<numMoves]:
+  for move in pseudoLegalMoves[0 ..< numMoves]:
     let newPosition = position.doMove(move)
     if newPosition.inCheck(position.us):
       continue

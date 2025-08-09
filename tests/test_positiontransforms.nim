@@ -2,9 +2,7 @@ import unittest
 import nimchess/[position, strchess, types]
 import testData/exampleFens
 
-
 suite "Position Transform Tests":
-
   template rotate(position: Position): Position =
     position.mirrorHorizontally(skipKeyCalculation = true).mirrorVertically()
 
@@ -17,10 +15,8 @@ suite "Position Transform Tests":
       check position == doubleRotated
 
       # Test quadruple mirror operations
-      let quadMirrored = position
-        .mirrorHorizontally
-        .mirrorVertically(swapColors = false)
-        .mirrorHorizontally
+      let quadMirrored = position.mirrorHorizontally
+        .mirrorVertically(swapColors = false).mirrorHorizontally
         .mirrorVertically(swapColors = false)
       check position == quadMirrored
 
@@ -29,23 +25,13 @@ suite "Position Transform Tests":
       let position = fen.toPosition
 
       # Test rotate + mirror combinations that should return to original
-      let transformed1 = position
-        .rotate
-        .mirrorVertically
-        .rotate
-        .mirrorVertically
+      let transformed1 = position.rotate.mirrorVertically.rotate.mirrorVertically
       check position == transformed1
 
       # Test complex sequence that should be identity
-      let transformed2 = position
-        .mirrorVertically
-        .mirrorHorizontally
-        .rotate
-        .mirrorVertically(swapColors = false)
-        .rotate
-        .mirrorVertically
-        .mirrorVertically(swapColors = false)
-        .mirrorHorizontally
+      let transformed2 = position.mirrorVertically.mirrorHorizontally.rotate
+        .mirrorVertically(swapColors = false).rotate.mirrorVertically
+        .mirrorVertically(swapColors = false).mirrorHorizontally
       check position == transformed2
 
   test "Single transforms produce valid positions":

@@ -1,16 +1,14 @@
 import position, move
 import std/tables
 
-
 export position, move
 export tables
 
-type
-  Game* = object
-    headers*: Table[string, string]
-    moves*: seq[Move]
-    startPosition*: Position
-    result*: string
+type Game* = object
+  headers*: Table[string, string]
+  moves*: seq[Move]
+  startPosition*: Position
+  result*: string
 
 func positions(game: Game): seq[Position] =
   result = @[game.startPosition]

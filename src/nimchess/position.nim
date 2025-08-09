@@ -1,7 +1,6 @@
 import types, bitboard, castling, zobristbitmasks
 export types, bitboard, castling
 
-
 type Position* = object
   pieces*: array[pawn .. king, Bitboard]
   colors*: array[white .. black, Bitboard]
@@ -12,7 +11,6 @@ type Position* = object
   halfmoveClock*: int
   pawnKey*: Key
   zobristKey*: Key
-
 
 func enemy*(position: Position): Color =
   position.us.opposite
@@ -40,10 +38,7 @@ func `[]`*(position: Position, piece: Piece, color: Color): Bitboard =
 func `[]`*(position: Position, color: Color, piece: Piece): Bitboard =
   position[color] and position[piece]
 
-
-func addPiece*(
-    position: var Position, color: Color, piece: Piece, target: Square
-) =
+func addPiece*(position: var Position, color: Color, piece: Piece, target: Square) =
   let bit = target.toBitboard
   position[piece] |= bit
   position[color] |= bit
@@ -52,9 +47,7 @@ func addPiece*(
   if piece == pawn:
     position.pawnKey ^= zobristPieceBitmasks[color][piece][target]
 
-func removePiece*(
-    position: var Position, color: Color, piece: Piece, source: Square
-) =
+func removePiece*(position: var Position, color: Color, piece: Piece, source: Square) =
   let bit = not source.toBitboard
   position[piece] &= bit
   position[color] &= bit
@@ -80,7 +73,8 @@ func pieceAt*(position: Position, square: Square): Piece =
   noPiece
 
 func colorAt*(position: Position, square: Square): Color =
-  doAssert position.occupancy.isSet(square), "Can't get color from square that is not set"
+  doAssert position.occupancy.isSet(square),
+    "Can't get color from square that is not set"
   if position[white].isSet(square): white else: black
 
 func coloredPieceAt*(position: Position, square: Square): ColoredPiece =
@@ -88,7 +82,7 @@ func coloredPieceAt*(position: Position, square: Square): ColoredPiece =
   if piece == noPiece:
     ColoredPiece(piece: noPiece)
   else:
-    let piece: pawn..king = piece
+    let piece: pawn .. king = piece
     ColoredPiece(piece: piece, color: position.colorAt(square))
 
 func addColoredPiece*(
@@ -132,12 +126,9 @@ func kingSquare*(position: Position, color: Color): Square =
 func inCheck*(position: Position, us: Color): bool =
   position.isAttacked(us, position.kingSquare(us))
 
-func calculateZobristKeys*(
-    position: Position
-): tuple[zobristKey: Key, pawnKey: Key] =
+func calculateZobristKeys*(position: Position): tuple[zobristKey: Key, pawnKey: Key] =
   result = (
-    zobristKey:
-      position.enPassantTarget.Key xor zobristSideToMoveBitmasks[position.us],
+    zobristKey: position.enPassantTarget.Key xor zobristSideToMoveBitmasks[position.us],
     pawnKey: 0.Key,
   )
   for color in white .. black:
@@ -157,7 +148,6 @@ func zobristKeysAreOk*(position: Position): bool =
 func setZobristKeys*(position: var Position) =
   (position.zobristKey, position.pawnKey) = position.calculateZobristKeys
 
-
 func isChess960*(position: Position): bool =
   for color in white .. black:
     if position.rookSource[color] != [noSquare, noSquare] and
@@ -173,8 +163,7 @@ func currentFullmoveNumber*(position: Position): int =
   position.halfmovesPlayed div 2 + 1
 
 func mirror(
-    position: Position,
-    mirrorFn: proc(bitboard: Bitboard): Bitboard {.noSideEffect.},
+    position: Position, mirrorFn: proc(bitboard: Bitboard): Bitboard {.noSideEffect.}
 ): Position =
   result = position
 

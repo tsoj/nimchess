@@ -2,7 +2,6 @@ import unittest
 import nimchess/[bitboard, types]
 
 suite "Bitboard Tests":
-
   test "toBitboard and toSquare":
     # Test noSquare
     check noSquare.toBitboard == 0.Bitboard
@@ -45,31 +44,31 @@ suite "Bitboard Tests":
   test "isPassedMask":
     # Test that passed pawn masks include the correct files
     let whiteMask = isPassedMask(white, d4)
-    check whiteMask.isSet(d5) == true  # Same file, ahead
-    check whiteMask.isSet(c5) == true  # Left file, ahead
-    check whiteMask.isSet(e5) == true  # Right file, ahead
+    check whiteMask.isSet(d5) == true # Same file, ahead
+    check whiteMask.isSet(c5) == true # Left file, ahead
+    check whiteMask.isSet(e5) == true # Right file, ahead
     check whiteMask.isSet(d3) == false # Same file, behind
     check whiteMask.isSet(f5) == false # Too far to the right
 
     let blackMask = isPassedMask(black, d4)
-    check blackMask.isSet(d3) == true  # Same file, ahead for black
-    check blackMask.isSet(c3) == true  # Left file, ahead for black
-    check blackMask.isSet(e3) == true  # Right file, ahead for black
+    check blackMask.isSet(d3) == true # Same file, ahead for black
+    check blackMask.isSet(c3) == true # Left file, ahead for black
+    check blackMask.isSet(e3) == true # Right file, ahead for black
     check blackMask.isSet(d5) == false # Same file, behind for black
 
   test "mask3x3":
     let mask = mask3x3(d4)
 
     # Should include the square itself and all adjacent squares
-    check mask.isSet(d4) == true  # Center
-    check mask.isSet(c3) == true  # Bottom-left
-    check mask.isSet(d3) == true  # Bottom
-    check mask.isSet(e3) == true  # Bottom-right
-    check mask.isSet(c4) == true  # Left
-    check mask.isSet(e4) == true  # Right
-    check mask.isSet(c5) == true  # Top-left
-    check mask.isSet(d5) == true  # Top
-    check mask.isSet(e5) == true  # Top-right
+    check mask.isSet(d4) == true # Center
+    check mask.isSet(c3) == true # Bottom-left
+    check mask.isSet(d3) == true # Bottom
+    check mask.isSet(e3) == true # Bottom-right
+    check mask.isSet(c4) == true # Left
+    check mask.isSet(e4) == true # Right
+    check mask.isSet(c5) == true # Top-left
+    check mask.isSet(d5) == true # Top
+    check mask.isSet(e5) == true # Top-right
 
     # Should not include squares further away
     check mask.isSet(b2) == false
@@ -97,12 +96,12 @@ suite "Bitboard Tests":
 
     # Verify that home ranks contain the correct squares
     let whiteHome = homeRank(white)
-    for file in 0..7:
+    for file in 0 .. 7:
       check whiteHome.isSet(newSquare(file, 0)) == true
       check whiteHome.isSet(newSquare(file, 7)) == false
 
     let blackHome = homeRank(black)
-    for file in 0..7:
+    for file in 0 .. 7:
       check blackHome.isSet(newSquare(file, 7)) == true
       check blackHome.isSet(newSquare(file, 0)) == false
 
@@ -121,13 +120,13 @@ suite "Bitboard Tests":
   test "passed pawn mask edge cases":
     # Test corner squares
     let whiteA1 = isPassedMask(white, a1)
-    check whiteA1.isSet(a2) == true  # Same file ahead
-    check whiteA1.isSet(b2) == true  # Adjacent file ahead
+    check whiteA1.isSet(a2) == true # Same file ahead
+    check whiteA1.isSet(b2) == true # Adjacent file ahead
     check whiteA1.isSet(h2) == false # Too far away
 
     let blackH8 = isPassedMask(black, h8)
-    check blackH8.isSet(h7) == true  # Same file ahead (for black)
-    check blackH8.isSet(g7) == true  # Adjacent file ahead (for black)
+    check blackH8.isSet(h7) == true # Same file ahead (for black)
+    check blackH8.isSet(g7) == true # Adjacent file ahead (for black)
     check blackH8.isSet(a7) == false # Too far away
 
   test "mask functions with edge squares":
@@ -137,13 +136,13 @@ suite "Bitboard Tests":
     check cornerMask.isSet(a2) == true
     check cornerMask.isSet(b1) == true
     check cornerMask.isSet(b2) == true
-    check cornerMask.countSetBits == 4  # Only 4 squares available from corner
+    check cornerMask.countSetBits == 4 # Only 4 squares available from corner
 
     # Test 5x5 mask for corner
     let corner5x5 = mask5x5(a1)
-    check corner5x5.countSetBits == 9  # Limited by board edge
+    check corner5x5.countSetBits == 9 # Limited by board edge
 
     # Test masks don't extend beyond board
-    let edgeMask = mask3x3(a4)  # Middle of a-file
+    let edgeMask = mask3x3(a4) # Middle of a-file
     for sq in edgeMask:
-      check sq.int8 mod 8 <= 2  # Should not extend beyond c-file
+      check sq.int8 mod 8 <= 2 # Should not extend beyond c-file

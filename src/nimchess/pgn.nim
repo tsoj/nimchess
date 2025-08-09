@@ -93,16 +93,17 @@ func validSANMove(position: Position, move: Move, san: string): bool =
     inc start
 
   var endPos = start + 1
-  while endPos + 1 < san.len and san[endPos+1] notin {' ', '\t', '\n', '\r', '+', '#'}:
+  while endPos + 1 < san.len and san[endPos + 1] notin {' ', '\t', '\n', '\r', '+', '#'}:
     inc endPos
 
   if start > endPos:
     return false
 
   # Check for castling moves
-  if endPos - start + 1 >= 5 and san[start..start+4] == "O-O-O":
-    return move.isCastling and move.target == position.rookSource[position.us][queenside]
-  elif endPos - start + 1 >= 3 and san[start..start+2] == "O-O":
+  if endPos - start + 1 >= 5 and san[start .. start + 4] == "O-O-O":
+    return
+      move.isCastling and move.target == position.rookSource[position.us][queenside]
+  elif endPos - start + 1 >= 3 and san[start .. start + 2] == "O-O":
     return move.isCastling and move.target == position.rookSource[position.us][kingside]
 
   # Parse piece type
@@ -113,7 +114,7 @@ func validSANMove(position: Position, move: Move, san: string): bool =
     pieceChar = san[pos]
     inc pos
   else:
-    pieceChar = 'P'  # Pawn move
+    pieceChar = 'P' # Pawn move
 
   let moved = pieceChar.toColoredPiece.piece
 
@@ -133,7 +134,7 @@ func validSANMove(position: Position, move: Move, san: string): bool =
     return false
 
   # Extract target square from last 2 positions
-  let target = parseEnum[Square](san[targetEnd-1..targetEnd])
+  let target = parseEnum[Square](san[targetEnd - 1 .. targetEnd])
   targetEnd -= 2
 
   # Check for capture and source disambiguation
@@ -146,12 +147,12 @@ func validSANMove(position: Position, move: Move, san: string): bool =
     case c
     of 'x':
       isCapture = true
-    of '1'..'8':
+    of '1' .. '8':
       sourceRank = ranks(parseEnum[Square]("a" & $c))
-    of 'a'..'h':
+    of 'a' .. 'h':
       sourceFile = files(parseEnum[Square]($c & "1"))
     else:
-      discard  # Skip other characters like annotations
+      discard # Skip other characters like annotations
     inc pos
 
   move.moved(position) == moved and (move.captured(position) != noPiece) == isCapture and
@@ -196,17 +197,17 @@ proc parseHeaders(stream: Stream): Table[string, string] =
     if not line.endsWith("]"):
       raise newException(ValueError, "Invalid header format: " & line)
 
-    let headerContent = line[1..^2]  # Remove [ and ]
+    let headerContent = line[1 ..^ 2] # Remove [ and ]
     let spacePos = headerContent.find(' ')
     if spacePos == -1:
       raise newException(ValueError, "Invalid header format: " & line)
 
-    let key = headerContent[0..<spacePos]
-    var value = headerContent[spacePos+1..^1].strip()
+    let key = headerContent[0 ..< spacePos]
+    var value = headerContent[spacePos + 1 ..^ 1].strip()
 
     # Remove quotes if present
     if value.startsWith("\"") and value.endsWith("\""):
-      value = value[1..^2]
+      value = value[1 ..^ 2]
 
     result[key] = value
 
@@ -219,7 +220,7 @@ proc cleanLineOfComments(line: string, inBraceCommentDepth: var int): string =
       # Rest of line is comment
       break
     elif c in ['}', ')']:
-        inBraceCommentDepth -= 1
+      inBraceCommentDepth -= 1
     elif c in ['{', '(']:
       inBraceCommentDepth += 1
     elif inBraceCommentDepth == 0:
@@ -259,16 +260,18 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
     content.add(cleanLine & " ")
 
   # Clean up the move text further
-  content = content.multiReplace([
-    ("\n", " "),
-    ("\r", " "),
-    ("\t", " "),
-    (".", " "),
-    ("!", " "),
-    ("?", " "),
-    ("+", " "),
-    ("#", " "),
-  ])
+  content = content.multiReplace(
+    [
+      ("\n", " "),
+      ("\r", " "),
+      ("\t", " "),
+      (".", " "),
+      ("!", " "),
+      ("?", " "),
+      ("+", " "),
+      ("#", " "),
+    ]
+  )
 
   # Split into tokens
   let tokens = content.split().filterIt(it.len > 0)
@@ -277,10 +280,8 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
     var cleanToken = token
 
     # Skip empty tokens or pure numbers
-    if cleanToken.len == 0 or
-      cleanToken.allIt(it.isDigit()) or
-      cleanToken in resultTokens or
-      cleanToken.startsWith("$"):
+    if cleanToken.len == 0 or cleanToken.allIt(it.isDigit()) or
+        cleanToken in resultTokens or cleanToken.startsWith("$"):
       continue
 
     let move = toMoveFromSAN(cleanToken, position)
@@ -296,22 +297,18 @@ proc parseGame*(stream: Stream): Game =
   let headers = parseHeaders(stream)
 
   # Determine starting position
-  let startPos = if "FEN" in headers:
-    toPosition(headers["FEN"])
-  else:
-    toPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+  let startPos =
+    if "FEN" in headers:
+      toPosition(headers["FEN"])
+    else:
+      toPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
   let (moves, gameResult) = parseMoveText(stream, startPos)
 
-  result = Game(
-    headers: headers,
-    moves: moves,
-    startPosition: startPos,
-    result: gameResult
-  )
+  result =
+    Game(headers: headers, moves: moves, startPosition: startPos, result: gameResult)
 
 iterator parseGamesFromStreamIter*(stream: Stream, suppressWarnings = false): Game =
-
   while not stream.atEnd():
     # Skip empty lines
     var line = ""
@@ -333,12 +330,13 @@ iterator parseGamesFromStreamIter*(stream: Stream, suppressWarnings = false): Ga
         let currentPos = stream.getPosition()
         stream.setPosition(0)
         var lineNumber = 1
-        for i in 0..<currentPos:
+        for i in 0 ..< currentPos:
           if stream.readChar() == '\n':
             lineNumber += 1
 
         assert currentPos == stream.getPosition()
-        echo &"WARNING: Failed to read game before line {lineNumber}\n--> ", getCurrentException().msg
+        echo &"WARNING: Failed to read game before line {lineNumber}\n--> ",
+          getCurrentException().msg
 
 iterator parseGamesFromFileIter*(filename: string, suppressWarnings = false): Game =
   let fileStream = newFileStream(filename, fmRead)
@@ -353,13 +351,13 @@ proc parseGamesFromStream*(stream: StringStream, suppressWarnings = false): seq[
 
 proc parseGamesFromString*(content: string, suppressWarnings = false): seq[Game] =
   let stream = newStringStream(content)
-  defer: stream.close()
+  defer:
+    stream.close()
   return parseGamesFromStream(stream, suppressWarnings = suppressWarnings)
 
 proc parseGamesFromFile*(filename: string, suppressWarnings = false): seq[Game] =
   let content = readFile(filename)
   return parseGamesFromString(content, suppressWarnings = suppressWarnings)
-
 
 func toPgnString*(game: Game): string =
   result = ""
@@ -378,7 +376,6 @@ func toPgnString*(game: Game): string =
   if position.us == black:
     result &= fmt"{position.currentFullmoveNumber}... "
 
-
   for i, move in game.moves:
     # Add move number for white moves
     if position.us == white:
@@ -392,7 +389,7 @@ func toPgnString*(game: Game): string =
       result &= " "
 
     # Add line break every few moves for readability
-    if i mod 16 == 15:  # Line break every 8 move pairs
+    if i mod 16 == 15: # Line break every 8 move pairs
       result &= "\n"
 
     position = position.doMove(move, allowNullMove = true)

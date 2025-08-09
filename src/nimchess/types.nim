@@ -85,13 +85,11 @@ func isEdge*(square: Square): bool =
 func opposite*(color: Color): Color =
   (color.uint8 xor 1).Color
 
-
 func mirrorVertically*(square: Square): Square =
   (square.int8 xor 56).Square
 
 func mirrorHorizontally*(square: Square): Square =
   (square.int8 xor 7).Square
-
 
 func `^=`*(a: var Key, b: Key) =
   a = a xor b
@@ -111,7 +109,6 @@ func `*`*(a: SomeNumber, b: Value): Value =
   Value(a.float * b.float)
 func `/`*(a: Value, b: SomeNumber): Value =
   Value(a.float / b.float)
-
 
 func `<`*(a, b: Value): bool {.borrow.}
 func `<=`*(a, b: Value): bool {.borrow.}
@@ -198,7 +195,6 @@ static:
   assert positiveMate > valueDraw
   assert negativeMate < valueDraw
 
-
 func boardString*(f: proc(square: Square): Option[string] {.noSideEffect.}): string =
   result = " _ _ _ _ _ _ _ _\n"
   for rank in countdown(7, 0):
@@ -241,7 +237,7 @@ func `$`*(coloredPiece: ColoredPiece): string =
   return t[coloredPiece.color][coloredPiece.piece]
 
 func toColoredPiece*(s: char): ColoredPiece =
-  var piece: pawn..king
+  var piece: pawn .. king
   case s
   of 'P', 'p':
     piece = pawn
