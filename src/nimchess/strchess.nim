@@ -85,29 +85,6 @@ func debugString*(position: Position): string =
   result &= "zobristKey: " & $position.zobristKey & "\n"
   result &= "rookSource: " & $position.rookSource
 
-func toMove*(s: string, position: Position): Move =
-  if s.len != 4 and s.len != 5:
-    raise newException(ValueError, "Move string is wrong length: " & s)
-
-  let
-    source = parseEnum[Square](s[0 .. 1])
-    target = parseEnum[Square](s[2 .. 3])
-    promoted =
-      if s.len == 5:
-        s[4].toColoredPiece.piece
-      else:
-        noPiece
-
-  for move in position.legalMoves:
-    if move.source == source and move.promoted == promoted:
-      if move.target == target:
-        return move
-      if move.isCastling and
-          target == kingTarget[position.us][move.castlingSide(position)] and
-          not position.isChess960:
-        return move
-  raise newException(ValueError, "Move is illegal: " & s)
-
 proc toPosition*(fen: string, suppressWarnings = false): Position =
   result = default(Position)
 
@@ -260,14 +237,222 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
       ValueError, "FEN is not correctly formatted: Need exactly one king for each color"
     )
 
-func notation*(move: Move, position: Position): string =
+func toUCI*(move: Move, position: Position): string =
   if move.isCastling and not position.isChess960:
     return $move.source & $kingTarget[position.us][move.castlingSide(position)]
   $move
 
-func notation*(pv: seq[Move], position: Position): string =
+func toMoveFromUCI*(s: string, position: Position): Move =
+  if s.len != 4 and s.len != 5:
+    raise newException(ValueError, "Move string is wrong length: " & s)
+
+  let
+    source = parseEnum[Square](s[0 .. 1])
+    target = parseEnum[Square](s[2 .. 3])
+    promoted =
+      if s.len == 5:
+        s[4].toColoredPiece.piece
+      else:
+        noPiece
+
+  for move in position.legalMoves:
+    if move.source == source and move.promoted == promoted:
+      if move.target == target:
+        return move
+      if move.isCastling and
+          target == kingTarget[position.us][move.castlingSide(position)] and
+          not position.isChess960:
+        return move
+  raise newException(ValueError, "Move is illegal: " & s)
+
+func toSAN*(move: Move, position: Position): string =
+  if move.isNoMove:
+    return "Z0"
+
+  result = ""
+
+  let
+    newPosition = position.doMove move
+    moveFile = ($move.source)[0]
+    moveRank = ($move.source)[1]
+    moved = move.moved(position)
+    captured = move.captured(position)
+
+  if moved != pawn:
+    result = moved.notation.toUpperAscii
+
+  for (fromFile, fromRank) in [
+    (none char, none char),
+    (some moveFile, none char),
+    (none char, some moveRank),
+    (some moveFile, some moveRank),
+  ]:
+    proc isDisambiguated(): bool =
+      if moved == pawn and fromFile.isNone and captured != noPiece:
+        return false
+
+      for otherMove in position.legalMoves:
+        let
+          otherMoveFile = ($otherMove.source)[0]
+          otherMoveRank = ($otherMove.source)[1]
+
+        if otherMove.moved(position) == moved and otherMove.target == move.target and
+            otherMove.source != move.source and
+            fromFile.get(otherwise = otherMoveFile) == otherMoveFile and
+            fromRank.get(otherwise = otherMoveRank) == otherMoveRank:
+          return false
+
+      true
+
+    if isDisambiguated():
+      if fromFile.isSome:
+        result &= $get(fromFile)
+      if fromRank.isSome:
+        result &= $get(fromRank)
+      break
+
+  if captured != noPiece:
+    result &= "x"
+
+  result &= $move.target
+
+  if move.promoted != noPiece:
+    result &= "=" & move.promoted.notation.toUpperAscii
+
+  if move.isCastling:
+    if move.castlingSide(position) == queenside:
+      result = "O-O-O"
+    else:
+      result = "O-O"
+
+  let inCheck = newPosition.inCheck(newPosition.us)
+  if newPosition.legalMoves.len == 0:
+    if inCheck:
+      result &= "#"
+    else:
+      result &= " 1/2-1/2"
+  else:
+    if inCheck:
+      result &= "+"
+    if newPosition.halfmoveClock > 100:
+      result &= " 1/2-1/2"
+
+func toSAN*(pv: seq[Move], position: Position): string =
   result = ""
   var currentPosition = position
   for move in pv:
-    result &= move.notation(currentPosition) & " "
+    result &= move.toSAN(currentPosition) & " "
+    currentPosition = currentPosition.doMove(move)
+
+func validSANMove(position: Position, move: Move, san: string): bool =
+  if san.len <= 1:
+    return false
+
+  # Find first non-whitespace segment without creating new strings
+  var start = 0
+  while start < san.len and san[start] in {' ', '\t', '\n', '\r'}:
+    inc start
+
+  var endPos = start + 1
+  while endPos + 1 < san.len and san[endPos + 1] notin {' ', '\t', '\n', '\r', '+', '#'}:
+    inc endPos
+
+  if start > endPos:
+    return false
+
+  # Check for castling moves
+  if endPos - start + 1 >= 5 and san[start .. start + 4] == "O-O-O":
+    return
+      move.isCastling and move.target == position.rookSource[position.us][queenside]
+  elif endPos - start + 1 >= 3 and san[start .. start + 2] == "O-O":
+    return move.isCastling and move.target == position.rookSource[position.us][kingside]
+
+  # Parse piece type
+  var pieceChar: char
+  var pos = start
+
+  if san[pos].isUpperAscii:
+    pieceChar = san[pos]
+    inc pos
+  else:
+    pieceChar = 'P' # Pawn move
+
+  let moved = pieceChar.toColoredPiece.piece
+
+  # Look for capture indicator and promotion, working backwards
+  var
+    isCapture = false
+    promoted = noPiece
+    targetEnd = endPos
+
+  # Check for promotion (=X at the end)
+  if targetEnd - 1 >= pos and san[targetEnd - 1] == '=':
+    promoted = san[targetEnd].toColoredPiece.piece
+    targetEnd -= 2
+
+  # Must have at least 2 chars for target square
+  if targetEnd - 1 < pos:
+    return false
+
+  proc toSquare(s: string): Square =
+    try:
+      parseEnum[Square](s)
+    except ValueError:
+      noSquare
+
+  # Extract target square from last 2 positions
+  let target = san[targetEnd - 1 .. targetEnd].toSquare
+  targetEnd -= 2
+
+  # Check for capture and source disambiguation
+  var
+    sourceRank = not 0.Bitboard
+    sourceFile = not 0.Bitboard
+
+  while pos <= targetEnd:
+    let c = san[pos]
+    case c
+    of 'x':
+      isCapture = true
+    of '1' .. '8':
+      sourceRank = ranks(toSquare("a" & $c))
+    of 'a' .. 'h':
+      sourceFile = files(toSquare($c & "1"))
+    else:
+      discard # Skip other characters like annotations
+    inc pos
+
+  move.moved(position) == moved and (move.captured(position) != noPiece) == isCapture and
+    move.promoted == promoted and move.target == target and
+    not empty(sourceRank and sourceFile and move.source.toBitboard)
+
+func toMove*(moveNotation: string, position: Position): Move =
+  if moveNotation.strip() in ["Z0", "--", "0000"]:
+    return noMove
+
+  result = noMove
+  for move in position.legalMoves:
+    if validSANMove(position, move, moveNotation):
+      if not result.isNoMove:
+        raise newException(
+          ValueError,
+          fmt"Ambiguous SAN move notation: {moveNotation} (possible moves: {result}, {move}",
+        )
+      result = move
+
+  if result.isNoMove:
+    try:
+      result = moveNotation.toMoveFromUCI(position)
+    except ValueError:
+      raise newException(ValueError, fmt"Illegal move notation: {moveNotation}")
+
+func notation*(
+    pv: seq[Move],
+    position: Position,
+    toFunc: proc(move: Move, position: Position): string {.noSideEffect.} = toUCI,
+): string =
+  result = ""
+  var currentPosition = position
+  for move in pv:
+    result &= move.toFunc(currentPosition) & " "
     currentPosition = currentPosition.doMove(move)

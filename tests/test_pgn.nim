@@ -1,4 +1,4 @@
-import nimchess/[pgn, strchess]
+import nimchess/[strchess, pgn]
 import std/[unittest, tables, streams, strutils]
 
 suite "PGN Parser Tests":
@@ -35,7 +35,7 @@ suite "PGN Parser Tests":
       echo sanMove
       echo claimedSAN
       echo uciMove
-      let claimedUCI = sanMove.toMoveFromSAN(position).notation(position)
+      let claimedUCI = sanMove.toMove(position).toUCI(position)
       echo claimedUCI
 
       check claimedSAN == sanMove
@@ -54,7 +54,7 @@ suite "PGN Parser Tests":
 1. e4 e5 2. Nf3 Nc6 3. Bb5 1-0
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
 
     let game = games[0]
@@ -67,7 +67,7 @@ suite "PGN Parser Tests":
     # Verify moves are correct
     let startPos =
       toPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    check game.moves[0] == toMoveFromSAN("e4", startPos)
+    check game.moves[0] == toMove("e4", startPos)
 
   test "Parse multiple games from string":
     let pgnContent =
@@ -87,7 +87,7 @@ suite "PGN Parser Tests":
 1. d4 d5 2. c4 0-1
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 2
     check games[0].headers["Event"] == "Game 1"
     check games[1].headers["Event"] == "Game 2"
@@ -106,7 +106,7 @@ suite "PGN Parser Tests":
 2. Nf3 Nc6 *
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check "4p3/4P3" in games[0].startPosition.fen
 
@@ -122,7 +122,7 @@ suite "PGN Parser Tests":
 3. Bb5?! {Dubious} a6 4. Ba4 Nf6 1/2-1/2
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].result == "1/2-1/2"
     # Should parse moves despite comments
@@ -139,7 +139,7 @@ suite "PGN Parser Tests":
 1. d4 e6 2. Bf4 Nf6 3. Qd2 Be7 4. Nc3 O-O 5. O-O-O *
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     let game = games[0]
 
@@ -159,7 +159,7 @@ suite "PGN Parser Tests":
 1. e4 e5 2. f4 exf4 { C33 King's Gambit Accepted } 3. e5 f3 4. e6 fxg2 5. e7 gxh1=Q 6. exd8=Q *
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     let game = games[0]
 
@@ -172,7 +172,7 @@ suite "PGN Parser Tests":
     check foundPromotion
 
   test "Empty content returns empty sequence":
-    let games = parseGamesFromString("")
+    let games = readPgnFromString("")
     check games.len == 0
 
   test "Malformed PGN gracefully handled":
@@ -182,7 +182,7 @@ suite "PGN Parser Tests":
 1. e4 e5 this is not a valid move
 """
 
-    let games = parseGamesFromString(pgnContent, suppressWarnings = true)
+    let games = readPgnFromString(pgnContent, suppressWarnings = true)
     # Should either parse partially or return empty, but not crash
     check games.len >= 0
 
@@ -198,7 +198,7 @@ suite "PGN Parser Tests":
 """
 
     let stream = newStringStream(pgnContent)
-    let games = parseGamesFromStream(stream)
+    let games = readPgnFromStream(stream)
     stream.close()
 
     check games.len == 1
@@ -218,7 +218,7 @@ suite "PGN Parser Tests":
 
 1. e4 e5 """ & resultStr
 
-      let games = parseGamesFromString(pgnContent)
+      let games = readPgnFromString(pgnContent)
       check games.len == 1
       check games[0].result == expected
 
@@ -235,7 +235,7 @@ e5 2. Nf3 ; Another comment
 Nc6 3. Bb5 1-0
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].result == "1-0"
     # Should parse moves despite semicolon comments
@@ -254,7 +254,7 @@ that spans multiple lines
 and should be ignored } e5 2. Nf3 Nc6 1-0
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].result == "1-0"
     check games[0].moves.len == 4 # e4, e5, Nf3, Nc6
@@ -271,7 +271,7 @@ and should be ignored } e5 2. Nf3 Nc6 1-0
 Nc6 3. Bb5 *
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].result == "*" # Should be *, not 1-0 or 0-1 from comments
     check games[0].moves.len == 5
@@ -296,7 +296,7 @@ Nc6 1-0
 1. d4 d5 0-1
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 2
     check games[0].headers["White"] == "Player1" # Not FakePlayer
     check games[1].headers["White"] == "RealPlayer"
@@ -319,7 +319,7 @@ Nc6 1-0
 1. d4 d5 0-1
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 2
     check games[0].result == "1-0"
     check games[1].result == "0-1"
@@ -335,7 +335,7 @@ Nc6 1-0
 1. e4 e5 2. Nf3 Ke2 ; IllegalMove
 """
 
-    let games = parseGamesFromString(pgnContent, suppressWarnings = true)
+    let games = readPgnFromString(pgnContent, suppressWarnings = true)
     check games.len == 0
 
   test "Handle completely invalid PGN moves":
@@ -349,7 +349,7 @@ Nc6 1-0
 1. xyz abc 2. NotAMove StillNotAMove *
 """
 
-    let games = parseGamesFromString(pgnContent, suppressWarnings = true)
+    let games = readPgnFromString(pgnContent, suppressWarnings = true)
     check games.len == 0
 
   test "Handle unclosed brace comment at end":
@@ -364,7 +364,7 @@ Nc6 1-0
 and continues to the end of the game
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].moves.len == 3 # e4, e5, Nf3
 
@@ -379,7 +379,7 @@ and continues to the end of the game
 1/2-1/2
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].moves.len == 0
     check games[0].result == "1/2-1/2"
@@ -399,7 +399,7 @@ e5 2. Nf3 { Multi-line
 3. Bb5 1-0
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 1
     check games[0].moves.len == 5
     check games[0].result == "1-0"
@@ -419,7 +419,7 @@ e5 2. Nf3 { Multi-line
 /\\ Ne7, c6}) *
 """
 
-    let games = parseGamesFromString(pgnContent)
+    let games = readPgnFromString(pgnContent)
     check games.len == 2
     check games[0].moves.len == 3
     check games[0].result == "*"
@@ -428,8 +428,8 @@ e5 2. Nf3 { Multi-line
 
   test "PGN position validation against ground truth FENs":
     # Load the test PGN file and expected FEN positions
-    let games1 = parseGamesFromFile("tests/testdata/pgns.pgn")
-    let games2 = games1.toPgnString.parseGamesFromString
+    let games1 = readPgnFile("tests/testdata/pgns.pgn")
+    let games2 = games1.toPgnString.readPgnFromString
     let expectedFens = readFile("tests/testdata/pgns.epd").strip().splitLines()
 
     var fenIndex = 0

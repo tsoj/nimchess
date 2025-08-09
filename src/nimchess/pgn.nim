@@ -4,181 +4,6 @@ import std/[strutils, options, strformat, streams, tables, sequtils]
 export game, position, move
 export tables, streams
 
-func toSAN*(move: Move, position: Position): string =
-  if move.isNoMove:
-    return "Z0"
-
-  result = ""
-
-  let
-    newPosition = position.doMove move
-    moveFile = ($move.source)[0]
-    moveRank = ($move.source)[1]
-    moved = move.moved(position)
-    captured = move.captured(position)
-
-  if moved != pawn:
-    result = moved.notation.toUpperAscii
-
-  for (fromFile, fromRank) in [
-    (none char, none char),
-    (some moveFile, none char),
-    (none char, some moveRank),
-    (some moveFile, some moveRank),
-  ]:
-    proc isDisambiguated(): bool =
-      if moved == pawn and fromFile.isNone and captured != noPiece:
-        return false
-
-      for otherMove in position.legalMoves:
-        let
-          otherMoveFile = ($otherMove.source)[0]
-          otherMoveRank = ($otherMove.source)[1]
-
-        if otherMove.moved(position) == moved and otherMove.target == move.target and
-            otherMove.source != move.source and
-            fromFile.get(otherwise = otherMoveFile) == otherMoveFile and
-            fromRank.get(otherwise = otherMoveRank) == otherMoveRank:
-          return false
-
-      true
-
-    if isDisambiguated():
-      if fromFile.isSome:
-        result &= $get(fromFile)
-      if fromRank.isSome:
-        result &= $get(fromRank)
-      break
-
-  if captured != noPiece:
-    result &= "x"
-
-  result &= $move.target
-
-  if move.promoted != noPiece:
-    result &= "=" & move.promoted.notation.toUpperAscii
-
-  if move.isCastling:
-    if move.castlingSide(position) == queenside:
-      result = "O-O-O"
-    else:
-      result = "O-O"
-
-  let inCheck = newPosition.inCheck(newPosition.us)
-  if newPosition.legalMoves.len == 0:
-    if inCheck:
-      result &= "#"
-    else:
-      result &= " 1/2-1/2"
-  else:
-    if inCheck:
-      result &= "+"
-    if newPosition.halfmoveClock > 100:
-      result &= " 1/2-1/2"
-
-func notationSAN*(pv: seq[Move], position: Position): string =
-  result = ""
-  var currentPosition = position
-  for move in pv:
-    result &= move.toSAN(currentPosition) & " "
-    currentPosition = currentPosition.doMove(move)
-
-func validSANMove(position: Position, move: Move, san: string): bool =
-  if san.len <= 1:
-    return false
-
-  # Find first non-whitespace segment without creating new strings
-  var start = 0
-  while start < san.len and san[start] in {' ', '\t', '\n', '\r'}:
-    inc start
-
-  var endPos = start + 1
-  while endPos + 1 < san.len and san[endPos + 1] notin {' ', '\t', '\n', '\r', '+', '#'}:
-    inc endPos
-
-  if start > endPos:
-    return false
-
-  # Check for castling moves
-  if endPos - start + 1 >= 5 and san[start .. start + 4] == "O-O-O":
-    return
-      move.isCastling and move.target == position.rookSource[position.us][queenside]
-  elif endPos - start + 1 >= 3 and san[start .. start + 2] == "O-O":
-    return move.isCastling and move.target == position.rookSource[position.us][kingside]
-
-  # Parse piece type
-  var pieceChar: char
-  var pos = start
-
-  if san[pos].isUpperAscii:
-    pieceChar = san[pos]
-    inc pos
-  else:
-    pieceChar = 'P' # Pawn move
-
-  let moved = pieceChar.toColoredPiece.piece
-
-  # Look for capture indicator and promotion, working backwards
-  var
-    isCapture = false
-    promoted = noPiece
-    targetEnd = endPos
-
-  # Check for promotion (=X at the end)
-  if targetEnd - 1 >= pos and san[targetEnd - 1] == '=':
-    promoted = san[targetEnd].toColoredPiece.piece
-    targetEnd -= 2
-
-  # Must have at least 2 chars for target square
-  if targetEnd - 1 < pos:
-    return false
-
-  # Extract target square from last 2 positions
-  let target = parseEnum[Square](san[targetEnd - 1 .. targetEnd])
-  targetEnd -= 2
-
-  # Check for capture and source disambiguation
-  var
-    sourceRank = not 0.Bitboard
-    sourceFile = not 0.Bitboard
-
-  while pos <= targetEnd:
-    let c = san[pos]
-    case c
-    of 'x':
-      isCapture = true
-    of '1' .. '8':
-      sourceRank = ranks(parseEnum[Square]("a" & $c))
-    of 'a' .. 'h':
-      sourceFile = files(parseEnum[Square]($c & "1"))
-    else:
-      discard # Skip other characters like annotations
-    inc pos
-
-  move.moved(position) == moved and (move.captured(position) != noPiece) == isCapture and
-    move.promoted == promoted and move.target == target and
-    not empty(sourceRank and sourceFile and move.source.toBitboard)
-
-func toMoveFromSAN*(sanMove: string, position: Position): Move =
-  if sanMove.strip() in ["Z0", "--", "0000"]:
-    return noMove
-
-  result = noMove
-  for move in position.legalMoves:
-    if validSANMove(position, move, sanMove):
-      if not result.isNoMove:
-        raise newException(
-          ValueError,
-          fmt"Ambiguous SAN move notation: {sanMove} (possible moves: {result}, {move}",
-        )
-      result = move
-
-  if result.isNoMove:
-    try:
-      result = sanMove.toMove(position)
-    except ValueError:
-      raise newException(ValueError, fmt"Illegal SAN notation: {sanMove}")
-
 proc parseHeaders(stream: Stream): Table[string, string] =
   result = initTable[string, string]()
   var line = ""
@@ -284,13 +109,13 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
         cleanToken in resultTokens or cleanToken.startsWith("$"):
       continue
 
-    let move = toMoveFromSAN(cleanToken, position)
+    let move = toMove(cleanToken, position)
     moves.add(move)
     position = position.doMove(move, allowNullMove = true)
 
   return (moves, gameResult.get(otherwise = "*"))
 
-proc parseGame*(stream: Stream): Game =
+proc readSingleGameFromPgn(stream: Stream): Game =
   if stream.atEnd():
     raise newException(ValueError, "Can't read PGN from finished stream")
 
@@ -308,7 +133,7 @@ proc parseGame*(stream: Stream): Game =
   result =
     Game(headers: headers, moves: moves, startPosition: startPos, result: gameResult)
 
-iterator parseGamesFromStreamIter*(stream: Stream, suppressWarnings = false): Game =
+iterator readPgnFromStreamIter*(stream: Stream, suppressWarnings = false): Game =
   while not stream.atEnd():
     # Skip empty lines
     var line = ""
@@ -323,7 +148,7 @@ iterator parseGamesFromStreamIter*(stream: Stream, suppressWarnings = false): Ga
       break
 
     try:
-      let game = parseGame(stream)
+      let game = readSingleGameFromPgn(stream)
       yield game
     except ValueError:
       if not suppressWarnings:
@@ -338,26 +163,26 @@ iterator parseGamesFromStreamIter*(stream: Stream, suppressWarnings = false): Ga
         echo &"WARNING: Failed to read game before line {lineNumber}\n--> ",
           getCurrentException().msg
 
-iterator parseGamesFromFileIter*(filename: string, suppressWarnings = false): Game =
+iterator readPgnFileIter*(filename: string, suppressWarnings = false): Game =
   let fileStream = newFileStream(filename, fmRead)
   if fileStream == nil:
     raise newException(IOError, fmt"Couldn't open file: {filename}")
-  for game in parseGamesFromStreamIter(fileStream, suppressWarnings = suppressWarnings):
+  for game in readPgnFromStreamIter(fileStream, suppressWarnings = suppressWarnings):
     yield game
 
-proc parseGamesFromStream*(stream: StringStream, suppressWarnings = false): seq[Game] =
-  for game in stream.parseGamesFromStreamIter(suppressWarnings = suppressWarnings):
+proc readPgnFromStream*(stream: StringStream, suppressWarnings = false): seq[Game] =
+  for game in stream.readPgnFromStreamIter(suppressWarnings = suppressWarnings):
     result.add game
 
-proc parseGamesFromString*(content: string, suppressWarnings = false): seq[Game] =
+proc readPgnFromString*(content: string, suppressWarnings = false): seq[Game] =
   let stream = newStringStream(content)
   defer:
     stream.close()
-  return parseGamesFromStream(stream, suppressWarnings = suppressWarnings)
+  return readPgnFromStream(stream, suppressWarnings = suppressWarnings)
 
-proc parseGamesFromFile*(filename: string, suppressWarnings = false): seq[Game] =
+proc readPgnFile*(filename: string, suppressWarnings = false): seq[Game] =
   let content = readFile(filename)
-  return parseGamesFromString(content, suppressWarnings = suppressWarnings)
+  return readPgnFromString(content, suppressWarnings = suppressWarnings)
 
 func toPgnString*(game: Game): string =
   result = ""
