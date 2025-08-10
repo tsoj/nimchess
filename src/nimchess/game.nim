@@ -45,6 +45,9 @@ func addMove*(game: var Game, move: Move) =
       # Stalemate
       game.result = "1/2-1/2"
 
+func addMove*(game: var Game, moveString: string) =
+  game.addMove moveString.toMove(game.currentPosition)
+
 func repetitionCount*(game: Game, moveIndex: int = -1): int =
   ## Count how many times the position at moveIndex appears in the game.
   ## If moveIndex is -1, counts the current position.
@@ -60,7 +63,7 @@ func repetitionCount*(game: Game, moveIndex: int = -1): int =
 
   let targetPosition = positions[targetIndex]
 
-  for pos in positions[0..targetIndex]:
+  for pos in positions[0 .. targetIndex]:
     if pos ~ targetPosition:
       result += 1
 
@@ -68,6 +71,23 @@ func hasRepetition*(game: Game, moveIndex: int = -1): bool =
   ## Check if there's a threefold repetition at the given move index.
   ## If moveIndex is -1, checks at the current position.
   game.repetitionCount(moveIndex = moveIndex) >= 3
+
+func fiftyMoveRule*(game: Game, moveIndex: int = -1): bool =
+  ## Check if the 50-move rule applies at the given move index.
+  ## The 50-move rule states that a game is drawn if 50 moves (100 half-moves)
+  ## pass without a pawn move or capture.
+  ## If moveIndex is -1, checks at the current position.
+  let positions = game.positions()
+  let targetIndex =
+    if moveIndex <= -1:
+      positions.len + moveIndex
+    else:
+      moveIndex
+
+  if targetIndex < 0 or targetIndex >= positions.len:
+    return false
+
+  positions[targetIndex].halfmoveClock >= 100
 
 proc newGame*(
     event: string = "?",
