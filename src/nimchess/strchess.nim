@@ -213,7 +213,7 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
 
   # halfmove clock and fullmove number
   try:
-    result.halfmoveClock = halfmoveClock.parseInt.int8
+    result.halfmoveClock = halfmoveClock.parseInt
   except ValueError:
     raise newException(
       ValueError,

@@ -21,36 +21,9 @@ func currentPosition*(game: Game): Position =
     return game.startPosition
   return game.positions[^1]
 
-func addMove*(game: var Game, move: Move) =
-  ## Add a move to the game. Raises ValueError if the move is not legal.
-  ## Updates the result if the game ends in mate or stalemate.
-  let currentPos = game.currentPosition()
-
-  if not currentPos.isLegal(move):
-    raise newException(ValueError, "Move " & $move & " is not legal")
-
-  game.moves.add(move)
-
-  # Check if the game has ended and update result if it was still ongoing
-  if game.result == "*":
-    let newPos = currentPos.doMove(move)
-
-    if newPos.isMate():
-      # Checkmate
-      if newPos.us == white:
-        game.result = "0-1" # Black wins
-      else:
-        game.result = "1-0" # White wins
-    elif newPos.isStalemate():
-      # Stalemate
-      game.result = "1/2-1/2"
-
-func addMove*(game: var Game, moveString: string) =
-  game.addMove moveString.toMove(game.currentPosition)
-
-func repetitionCount*(game: Game, moveIndex: int = -1): int =
-  ## Count how many times the position at moveIndex appears in the game.
-  ## If moveIndex is -1, counts the current position.
+func getTargetIndex*(game: Game, moveIndex: int = -1): int =
+  ## Helper function to get the target index for a move.
+  ## If moveIndex is -1, returns the current position index.
   let positions = game.positions()
   let targetIndex =
     if moveIndex <= -1:
@@ -59,7 +32,15 @@ func repetitionCount*(game: Game, moveIndex: int = -1): int =
       moveIndex
 
   if targetIndex < 0 or targetIndex >= positions.len:
-    return 0
+    raise newException(IndexDefect, "Move index out of bounds")
+
+  targetIndex
+
+func repetitionCount*(game: Game, moveIndex: int = -1): int =
+  ## Count how many times the position at moveIndex appears in the game.
+  ## If moveIndex is -1, counts the current position.
+  let positions = game.positions()
+  let targetIndex = game.getTargetIndex(moveIndex)
 
   let targetPosition = positions[targetIndex]
 
@@ -72,22 +53,46 @@ func hasRepetition*(game: Game, moveIndex: int = -1): bool =
   ## If moveIndex is -1, checks at the current position.
   game.repetitionCount(moveIndex = moveIndex) >= 3
 
+func fivefoldRepetition*(game: Game, moveIndex: int = -1): bool =
+  ## Check if there's a fivefold repetition at the given move index (mandatory draw).
+  ## If moveIndex is -1, checks at the current position.
+  game.repetitionCount(moveIndex = moveIndex) >= 5
+
 func fiftyMoveRule*(game: Game, moveIndex: int = -1): bool =
   ## Check if the 50-move rule applies at the given move index.
   ## The 50-move rule states that a game is drawn if 50 moves (100 half-moves)
   ## pass without a pawn move or capture.
   ## If moveIndex is -1, checks at the current position.
-  let positions = game.positions()
-  let targetIndex =
-    if moveIndex <= -1:
-      positions.len + moveIndex
-    else:
-      moveIndex
 
-  if targetIndex < 0 or targetIndex >= positions.len:
-    return false
+  let targetIndex = game.getTargetIndex(moveIndex)
+  game.positions()[targetIndex].halfmoveClock >= 100
 
-  positions[targetIndex].halfmoveClock >= 100
+func seventyFiveMoveRule*(game: Game, moveIndex: int = -1): bool =
+  ## Check if the 75-move rule applies at the given move index (mandatory draw).
+  ## The 75-move rule states that a game is automatically drawn if 75 moves (150 half-moves)
+  ## pass without a pawn move or capture.
+  ## If moveIndex is -1, checks at the current position.
+
+  let targetIndex = game.getTargetIndex(moveIndex)
+  game.positions()[targetIndex].halfmoveClock >= 150
+
+func applyResult(game: var Game) =
+  # Check if the game has ended and update result if it was still ongoing
+  let currentPos = game.currentPosition()
+  if game.result == "*":
+
+    if currentPos.isMate():
+      # Checkmate
+      if currentPos.us == white:
+        game.result = "0-1" # Black wins
+      else:
+        game.result = "1-0" # White wins
+    elif currentPos.isStalemate():
+      # Stalemate
+      game.result = "1/2-1/2"
+    elif game.fivefoldRepetition() or game.seventyFiveMoveRule():
+      # Mandatory draw conditions
+      game.result = "1/2-1/2"
 
 proc newGame*(
     event: string = "?",
@@ -146,3 +151,22 @@ proc newGame*(
     result.headers["Termination"] = termination
   if mode != "":
     result.headers["Mode"] = mode
+
+  result.applyResult
+
+func addMove*(game: var Game, move: Move) =
+  ## Add a move to the game. Raises ValueError if the move is not legal.
+  ## Updates the result if the game ends in mate or stalemate.
+  let currentPos = game.currentPosition()
+
+  if not currentPos.isLegal(move):
+    raise newException(ValueError, "Move " & $move & " is not legal")
+
+  game.moves.add(move)
+
+  game.applyResult()
+
+
+
+func addMove*(game: var Game, moveString: string) =
+  game.addMove moveString.toMove(game.currentPosition)

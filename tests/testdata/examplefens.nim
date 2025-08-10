@@ -7,6 +7,7 @@ const classicalFens* = [
   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
   "QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1",
+  "rn3rk1/1bqp1ppp/5b2/1Bp5/P4P2/1QN1P3/1P1B3P/R3K1R1 w Q - 100000 1000000",
   # fens from stormphrax, taken from alexandria, ultimately from bitgenie
   "r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq a6 0 14",
   "4rrk1/2p1b1p1/p1p3q1/4p3/2P2n1p/1P1NR2P/PB3PP1/3R1QK1 b - - 2 24",

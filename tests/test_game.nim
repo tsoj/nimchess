@@ -51,11 +51,12 @@ suite "Game Tests":
     check mateGame.currentPosition.isMate()
     # Note: The result field behavior may depend on implementation details
 
-  test "repetition detection":
+  test "repetition detection - threefold (claimable) vs fivefold (automatic draw)":
     var repGame = newGame()
 
     check repGame.repetitionCount() == 1
 
+    # First repetition cycle
     repGame.addMove "Nf3"
     repGame.addMove "Nf6"
     repGame.addMove "Ng1"
@@ -64,16 +65,50 @@ suite "Game Tests":
     check repGame.repetitionCount() == 2
     check repGame.repetitionCount(-2) == 1
 
+    # Second repetition cycle
     repGame.addMove "Nf3"
     repGame.addMove "Nf6"
     repGame.addMove "Ng1"
     repGame.addMove "Ng8"
 
+    # Test repetition counting at different positions
     for i in 0 .. 8:
       check repGame.repetitionCount(i) == 1 + i div 4
 
-    check repGame.repetitionCount(9) == 0
+    try:
+      discard repGame.repetitionCount(9)
+      check false
+    except IndexDefect:
+      discard
+
+    # After third occurrence (threefold repetition)
     check repGame.hasRepetition()
+    check not repGame.fivefoldRepetition()
+    check repGame.result == "*" # Threefold is claimable, not automatic
+
+    # Third repetition cycle
+    repGame.addMove "Nf3"
+    repGame.addMove "Nf6"
+    repGame.addMove "Ng1"
+    repGame.addMove "Ng8"
+    check repGame.result == "*" # Still ongoing
+
+    # Fourth repetition cycle
+    repGame.addMove "Nf3"
+    repGame.addMove "Nf6"
+    repGame.addMove "Ng1"
+    repGame.addMove "Ng8"
+
+    # After fifth occurrence (fivefold repetition) - should automatically draw
+    check repGame.repetitionCount() == 5
+    check repGame.hasRepetition()
+    check repGame.fivefoldRepetition()
+    check repGame.result == "1/2-1/2" # Fivefold is mandatory, automatic
+
+    # Test fivefold repetition at different positions
+    check repGame.fivefoldRepetition(-1) # current position
+    check not repGame.fivefoldRepetition(0) # starting position
+    check not repGame.fivefoldRepetition(4) # after first repetition cycle
 
   test "FEN starting position":
     let fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
@@ -89,36 +124,54 @@ suite "Game Tests":
     check defaultGame.moves.len == 0
     check defaultGame.currentPosition == classicalStartPos
 
-  test "fifty move rule detection":
-    var fiftyMoveGame = newGame()
-    
+  test "move rule detection - fifty move (claimable) vs seventy-five move (automatic draw)":
+    var normalGame = newGame()
+
     # Start with a normal game
-    fiftyMoveGame.addMove "e4"
-    fiftyMoveGame.addMove "e5"
-    fiftyMoveGame.addMove "Nf3"
-    fiftyMoveGame.addMove "Nf6"
-    
-    # At the beginning, 50-move rule should not apply
-    check not fiftyMoveGame.fiftyMoveRule()
-    check not fiftyMoveGame.fiftyMoveRule(0) # starting position
-    
-    # Test with invalid indices
-    check not fiftyMoveGame.fiftyMoveRule(100) # beyond game length
-    check not fiftyMoveGame.fiftyMoveRule(-100) # before game start
-    
+    normalGame.addMove "e4"
+    normalGame.addMove "e5"
+    normalGame.addMove "Nf3"
+    normalGame.addMove "Nf6"
+
+    # At the beginning, neither rule should apply
+    check not normalGame.fiftyMoveRule()
+    check not normalGame.seventyFiveMoveRule()
+    check not normalGame.fiftyMoveRule(0) # starting position
+    check not normalGame.seventyFiveMoveRule(0) # starting position
+
     # Test with a FEN position that has a high halfmove clock (99 halfmoves)
     # This is just one halfmove away from triggering the 50-move rule
     let highHalfmoveClockFen = "8/8/8/8/8/3k4/3K4/8 w - - 99 50"
     let almostFiftyGame = newGame(fen = highHalfmoveClockFen)
     check not almostFiftyGame.fiftyMoveRule()
-    
+    check not almostFiftyGame.seventyFiveMoveRule()
+
     # Test with a FEN position that triggers the 50-move rule (100 halfmoves)
     let fiftyMoveRuleFen = "8/8/8/8/8/3k4/3K4/8 w - - 100 51"
     let fiftyRuleTriggeredGame = newGame(fen = fiftyMoveRuleFen)
     check fiftyRuleTriggeredGame.fiftyMoveRule()
-    check fiftyRuleTriggeredGame.fiftyMoveRule(0) # check at starting position
-    
-    # Test with a FEN position that exceeds 50-move rule (120 halfmoves)
-    let beyondFiftyMoveFen = "8/8/8/8/8/3k4/3K4/8 b - - 120 61"
-    let beyondFiftyGame = newGame(fen = beyondFiftyMoveFen)
-    check beyondFiftyGame.fiftyMoveRule()
+    check not fiftyRuleTriggeredGame.seventyFiveMoveRule()
+    check fiftyRuleTriggeredGame.result == "*" # 50-move rule is claimable, not automatic
+
+    # Test with a FEN position that has a high halfmove clock (149 halfmoves)
+    # This is just one halfmove away from triggering the 75-move rule
+    let highSeventyFiveHalfmoveClockFen = "8/8/8/8/8/3k4/3K4/8 w - - 149 75"
+    let almostSeventyFiveGame = newGame(fen = highSeventyFiveHalfmoveClockFen)
+    check almostSeventyFiveGame.fiftyMoveRule() # Should trigger 50-move rule
+    check not almostSeventyFiveGame.seventyFiveMoveRule()
+    check almostSeventyFiveGame.result == "*" # Still not automatic
+
+    # Test with a FEN position that triggers the 75-move rule (150 halfmoves)
+    let seventyFiveMoveRuleFen = "8/8/8/8/8/3k4/3K4/8 w - - 150 76"
+    let seventyFiveRuleTriggeredGame = newGame(fen = seventyFiveMoveRuleFen)
+    check seventyFiveRuleTriggeredGame.fiftyMoveRule() # Should also trigger 50-move rule
+    check seventyFiveRuleTriggeredGame.seventyFiveMoveRule()
+    check seventyFiveRuleTriggeredGame.result == "1/2-1/2"
+      # 75-move rule is mandatory, automatic
+
+    # Test with a FEN position that exceeds both rules (200 halfmoves)
+    let beyondBothRulesFen = "8/8/8/8/8/3k4/3K4/8 b - - 200 101"
+    let beyondBothGame = newGame(fen = beyondBothRulesFen)
+    check beyondBothGame.fiftyMoveRule()
+    check beyondBothGame.seventyFiveMoveRule()
+    check beyondBothGame.result == "1/2-1/2" # Should automatically be a draw
