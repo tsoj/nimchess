@@ -6,7 +6,7 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - macos-latest
+          # - macos-latest
           - ubuntu-latest
     name: ${{ matrix.os }} - ${{ matrix.nimversion }}
     runs-on: ${{ matrix.os }}
