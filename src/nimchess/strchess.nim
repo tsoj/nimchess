@@ -337,13 +337,6 @@ func toSAN*(move: Move, position: Position): string =
     if newPosition.halfmoveClock > 100:
       result &= " 1/2-1/2"
 
-func toSAN*(pv: seq[Move], position: Position): string =
-  result = ""
-  var currentPosition = position
-  for move in pv:
-    result &= move.toSAN(currentPosition) & " "
-    currentPosition = currentPosition.doMove(move)
-
 func validSANMove(position: Position, move: Move, san: string): bool =
   if san.len <= 1:
     return false

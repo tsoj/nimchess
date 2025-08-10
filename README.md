@@ -55,21 +55,10 @@ for move in position.legalMoves:
 ### PGN Support
 
 ```nim
-# Read PGN file
 let game = readPgnFile("game.pgn")[0]
 echo game.headers["White"]
 echo game.headers["Black"]
 echo game.result
-```
-
-### Position Display
-
-```nim
-# Print position
-echo position  # Shows board with Unicode pieces
-
-# Get FEN string
-echo position.fen()
 ```
 
 ## Requirements
