@@ -429,7 +429,7 @@ func toMove*(moveNotation: string, position: Position): Move =
       if not result.isNoMove:
         raise newException(
           ValueError,
-          fmt"Ambiguous SAN move notation: {moveNotation} (possible moves: {result}, {move}",
+          fmt"Ambiguous SAN move notation: {moveNotation} (possible moves: {result}, {move})",
         )
       result = move
 
