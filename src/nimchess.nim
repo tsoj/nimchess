@@ -1,4 +1,3 @@
-
 import nimchess/[bitboard, game, move, movegen, pgn, position, strchess, types]
 export bitboard, game, move, movegen, pgn, position, strchess, types
 ## ========
@@ -44,15 +43,15 @@ runnableExamples:
   let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
 
   # Display the position
-  echo pos  # Shows board with Unicode pieces
+  echo pos # Shows board with Unicode pieces
 
   # Generate all legal moves
   for move in pos.legalMoves:
-    echo move.toSAN(pos)  # Show move in algebraic notation
+    echo move.toSAN(pos) # Show move in algebraic notation
 
   # Make a move
   let newPos = pos.doMove("e4".toMove(pos))
-  echo newPos.fen()  # Get FEN string of new position
+  echo newPos.fen() # Get FEN string of new position
 ##
 ## Working with games and PGN:
 ##
@@ -66,7 +65,8 @@ runnableExamples:
 ##
 runnableExamples:
   let
-    position = "1rbn1rk1/p2p2q1/1p2p1pp/2b5/2P1NP2/P3P3/1P2BNP1/1KQR3R b - - 4 21".toPosition
+    position =
+      "1rbn1rk1/p2p2q1/1p2p1pp/2b5/2P1NP2/P3P3/1P2BNP1/1KQR3R b - - 4 21".toPosition
     bishopAttack = position.attacksFrom(bishop, c5)
     attackedPawns = position[white, pawn] and bishopAttack
 
