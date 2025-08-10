@@ -18,14 +18,12 @@ echo ""
 # Test adding moves
 echo "Testing move addition..."
 game1.addMove("e4".toMove(game1.currentPosition))
-echo game1.currentPosition.fen
-echo game1.currentPosition.debugString
-echo "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1".toPosition.debugString
-assert game1.currentPosition == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1".toPosition
+assert game1.currentPosition ==
+  "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1".toPosition
 echo "Added e4"
 game1.addMove("e5".toMove(game1.currentPosition))
-echo game1.currentPosition.fen
-assert game1.currentPosition == "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2".toPosition
+assert game1.currentPosition ==
+  "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2".toPosition
 echo "Added e5"
 assert game1.moves.len == 2
 assert game1.result == "*"

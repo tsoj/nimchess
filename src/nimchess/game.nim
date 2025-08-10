@@ -4,13 +4,11 @@ import std/tables
 export position, move
 export tables
 
-type
-  Game* = object
-    headers*: Table[string, string]
-    moves*: seq[Move]
-    startPosition*: Position = classicalStartPos
-    result*: string = "*"
-
+type Game* = object
+  headers*: Table[string, string]
+  moves*: seq[Move]
+  startPosition*: Position = classicalStartPos
+  result*: string = "*"
 
 func positions*(game: Game): seq[Position] =
   result = @[game.startPosition]
@@ -40,38 +38,22 @@ func addMove*(game: var Game, move: Move) =
     if newPos.isMate():
       # Checkmate
       if newPos.us == white:
-        game.result = "0-1"  # Black wins
+        game.result = "0-1" # Black wins
       else:
-        game.result = "1-0"  # White wins
+        game.result = "1-0" # White wins
     elif newPos.isStalemate():
       # Stalemate
       game.result = "1/2-1/2"
-
-func hasRepetition*(game: Game, moveIndex: int = -1): bool =
-  ## Check if there's a threefold repetition at the given move index.
-  ## If moveIndex is -1, checks at the current position.
-  let positions = game.positions()
-  let targetIndex = if moveIndex == -1: positions.len - 1 else: moveIndex
-
-  if targetIndex < 0 or targetIndex >= positions.len:
-    return false
-
-  let targetPosition = positions[targetIndex]
-  var count = 0
-
-  for i, pos in positions:
-    if pos ~ targetPosition:
-      count += 1
-      if count >= 3:
-        return true
-
-  return false
 
 func repetitionCount*(game: Game, moveIndex: int = -1): int =
   ## Count how many times the position at moveIndex appears in the game.
   ## If moveIndex is -1, counts the current position.
   let positions = game.positions()
-  let targetIndex = if moveIndex == -1: positions.len - 1 else: moveIndex
+  let targetIndex =
+    if moveIndex <= -1:
+      positions.len - moveIndex
+    else:
+      moveIndex
 
   if targetIndex < 0 or targetIndex >= positions.len:
     return 0
@@ -82,22 +64,27 @@ func repetitionCount*(game: Game, moveIndex: int = -1): int =
     if pos ~ targetPosition:
       result += 1
 
+func hasRepetition*(game: Game, moveIndex: int = -1): bool =
+  ## Check if there's a threefold repetition at the given move index.
+  ## If moveIndex is -1, checks at the current position.
+  game.repetitionCount(moveIndex = moveIndex) >= 3
+
 proc newGame*(
-  event: string = "?",
-  site: string = "?",
-  date: string = "????.??.??",
-  round: string = "?",
-  white: string = "?",
-  black: string = "?",
-  gameResult: string = "*",
-  startPosition: Position = classicalStartPos,
-  fen: string = "",
-  annotator: string = "",
-  plyCount: string = "",
-  timeControl: string = "",
-  time: string = "",
-  termination: string = "",
-  mode: string = ""
+    event: string = "?",
+    site: string = "?",
+    date: string = "????.??.??",
+    round: string = "?",
+    white: string = "?",
+    black: string = "?",
+    gameResult: string = "*",
+    startPosition: Position = classicalStartPos,
+    fen: string = "",
+    annotator: string = "",
+    plyCount: string = "",
+    timeControl: string = "",
+    time: string = "",
+    termination: string = "",
+    mode: string = "",
 ): Game =
   ## Create a new game with the Seven Tag Roster and optional additional tags.
   ## If FEN is provided, it overrides startPosition and SetUp tag is automatically added.

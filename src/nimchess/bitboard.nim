@@ -81,6 +81,21 @@ func mirrorHorizontally*(bitboard: Bitboard): Bitboard =
     result = result or ((bitboard and f1) shl shiftAmount)
     result = result or ((bitboard and f2) shr shiftAmount)
 
+func left*(b: Bitboard): Bitboard =
+  b shr 1
+
+func right*(b: Bitboard): Bitboard =
+  b shl 1
+
+func up*(b: Bitboard): Bitboard =
+  b shl 8
+
+func down*(b: Bitboard): Bitboard =
+  b shr 8
+
+func up*(b: Bitboard, c: Color): Bitboard =
+  if c == white: b.up else: b.down
+
 proc attackForSquareAndKey(
     hashKey: uint8,
     startSquare: Square,

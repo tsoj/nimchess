@@ -158,7 +158,11 @@ func enPassantTargetSquare*(move: Move, position: Position): Square =
       not empty(move.source.toBitboard and ranks(a2.flipOrNot())) and
       not empty(move.target.toBitboard and ranks(a4.flipOrNot())):
     let targetSquare = toSquare(ranks(a3.flipOrNot()) and files(move.source))
-    if not empty(position[pawn, position.enemy] and attackMaskPawnCapture(targetSquare, position.us)):
+    if not empty(
+      position[pawn, position.enemy] and attackMaskPawnCapture(
+        targetSquare, position.us
+      )
+    ):
       return targetSquare
   noSquare
 
@@ -225,11 +229,16 @@ func isPseudoLegal*(position: Position, move: Move): bool =
       if target.toBitboard != attackMaskPawnQuiet(source, us):
         if not empty(occupancy and attackMaskPawnQuiet(source, us)):
           return false
-        if empty(
-          enPassantTarget.toBitboard and
-            attackMaskPawnQuiet(target, enemy) and attackMaskPawnQuiet(source, us)
-        ) and not empty(attackMaskPawnCapture(source.up(us), us) and position[pawn, enemy]):
-          # debugEcho "Hi :)"
+
+        let potentialEnPassantTarget = (
+          attackMaskPawnQuiet(target, enemy) and attackMaskPawnQuiet(source, us) and
+          homeRank(us).up(us).up(us)
+        ).toSquare
+
+        if potentialEnPassantTarget == noSquare or (
+          potentialEnPassantTarget != enPassantTarget and
+          not empty(attackMaskPawnCapture(source.up(us), us) and position[pawn, enemy])
+        ):
           return false
       elif enPassantTarget != noSquare:
         return false

@@ -53,16 +53,6 @@ func generateQuiets(position: Position, piece: Piece, moves: var openArray[Move]
         promoted = noPiece,
       )
 
-func left(b: Bitboard): Bitboard =
-  b shr 1
-func right(b: Bitboard): Bitboard =
-  b shl 1
-func up(b: Bitboard, c: Color): Bitboard =
-  if c == white:
-    b shl 8
-  else:
-    b shr 8
-
 func pawnLeftAttack(pawns: Bitboard, color: Color): Bitboard =
   (pawns and not files(a1)).up(color).left
 func pawnRightAttack(pawns: Bitboard, color: Color): Bitboard =

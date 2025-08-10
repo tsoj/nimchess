@@ -168,9 +168,9 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
       of 'K', 'k', 'Q', 'q':
         let (makeStep, atEdge) =
           if castlingChar in ['K', 'k']:
-            (right, isRightEdge)
+            (types.right, isRightEdge)
           else:
-            (left, isLeftEdge)
+            (types.left, isLeftEdge)
         var
           square = kingSquare
           rookSource = noSquare
@@ -450,4 +450,5 @@ func notation*(
     result &= move.toFunc(currentPosition) & " "
     currentPosition = currentPosition.doMove(move)
 
-const classicalStartPos* = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+const classicalStartPos* =
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
