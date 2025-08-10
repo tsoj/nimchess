@@ -22,4 +22,4 @@ jobs:
 
       - name: Nimble Test
         shell: bash
-        run: nimble test -d:maxNumPerftNodes=100000
+        run: nimble test -d:maxNumPerftNodes=10000

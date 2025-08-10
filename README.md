@@ -2,6 +2,8 @@
 
 A fast and efficient chess library for Nim, with move generation, move validation, and support for common chess formats.
 
+[Docs](https://tsoj.github.io/nimchess/)
+
 ## Installation
 
 Add nimchess to your `.nimble` file:
