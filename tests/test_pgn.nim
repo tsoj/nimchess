@@ -31,12 +31,7 @@ suite "PGN Parser Tests":
       let
         position = fen.toPosition
         claimedSAN = uciMove.toMove(position).toSAN(position)
-      echo position
-      echo sanMove
-      echo claimedSAN
-      echo uciMove
-      let claimedUCI = sanMove.toMove(position).toUCI(position)
-      echo claimedUCI
+        claimedUCI = sanMove.toMove(position).toUCI(position)
 
       check claimedSAN == sanMove
       check claimedUCI == uciMove

@@ -9,14 +9,14 @@ proc parseHeaders(stream: Stream): Table[string, string] =
   var line = ""
 
   while not stream.atEnd():
+    let currentPos = stream.getPosition()
     line = stream.readLine().strip()
     if line.len == 0:
       continue
 
     if not line.startsWith("["):
       # Put back the line by seeking back
-      let currentPos = stream.getPosition()
-      stream.setPosition(currentPos - line.len - 1)
+      stream.setPosition(currentPos)
       break
 
     if not line.endsWith("]"):
