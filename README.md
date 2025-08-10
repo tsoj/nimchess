@@ -30,6 +30,8 @@ nimble install nimchess
 ### Creating Positions
 
 ```nim
+import nimchess
+
 # Starting position
 let startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
 
