@@ -4,6 +4,11 @@ on:
     branches:
       - 'main'
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 env:
   nim-version: 'stable'
   nim-src: src/${{ github.event.repository.name }}.nim
