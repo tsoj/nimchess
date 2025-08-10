@@ -1,6 +1,6 @@
 import unittest
 import nimchess/[position, strchess, types]
-import testData/exampleFens
+import testdata/examplefens
 
 suite "Position Transform Tests":
   template rotate(position: Position): Position =
@@ -49,50 +49,47 @@ suite "Position Transform Tests":
 
       check vertMirroredFen.toPosition == vertMirrored
 
-      # # Test horizontal mirror
-      # let horizMirrored = position.mirrorHorizontally
-      # let horizMirroredFen = horizMirrored.fen
-      # check horizMirroredFen.toPosition == horizMirrored
+      assert vertMirroredFen.toPosition == vertMirrored
 
-      # # Test rotation
-      # let rotated = position.rotate
-      # let rotatedFen = rotated.fen
-      # check rotatedFen.toPosition == rotated
+      # Test horizontal mirror
+      let horizMirrored = position.mirrorHorizontally
+      let horizMirroredFen = horizMirrored.fen(alwaysShowEnPassantSquare = true)
+      check horizMirroredFen.toPosition == horizMirrored
 
-  # test "Transform properties":
-  #   for fen in someFens:
-  #     let position = fen.toPosition
+      # Test rotation
+      let rotated = position.rotate
+      let rotatedFen = rotated.fen(alwaysShowEnPassantSquare = true)
+      check rotatedFen.toPosition == rotated
 
-  #     # Test that horizontal mirror is its own inverse
-  #     check position == position.mirrorHorizontally.mirrorHorizontally
+  test "Transform properties":
+    for fen in someFens:
+      let position = fen.toPosition
 
-  #     # Test that vertical mirror is its own inverse
-  #     check position == position.mirrorVertically.mirrorVertically
+      # Test that horizontal mirror is its own inverse
+      check position == position.mirrorHorizontally.mirrorHorizontally
 
-  #     # Test that rotation twice equals horizontal + vertical mirror
-  #     let rotatedTwice = position.rotate.rotate
-  #     let hvMirrored = position.mirrorHorizontally.mirrorVertically
-  #     check rotatedTwice == hvMirrored
+      # Test that vertical mirror is its own inverse
+      check position == position.mirrorVertically.mirrorVertically
 
-  # test "Zobrist keys after transforms":
-  #   for fen in someFens:
-  #     let position = fen.toPosition
+  test "Zobrist keys after transforms":
+    for fen in someFens:
+      let position = fen.toPosition
 
-  #     # Verify that transforms with key calculation maintain key consistency
-  #     let vertMirrored = position.mirrorVertically(skipKeyCalculation = false)
-  #     check vertMirrored.zobristKeysAreOk
+      # Verify that transforms with key calculation maintain key consistency
+      let vertMirrored = position.mirrorVertically(skipKeyCalculation = false)
+      check vertMirrored.zobristKeysAreOk
 
-  #     let horizMirrored = position.mirrorHorizontally(skipKeyCalculation = false)
-  #     check horizMirrored.zobristKeysAreOk
+      let horizMirrored = position.mirrorHorizontally(skipKeyCalculation = false)
+      check horizMirrored.zobristKeysAreOk
 
-  # test "Color swapping in vertical mirror":
-  #   let testFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-  #   let position = testFen.toPosition
+  test "Color swapping in vertical mirror":
+    let testFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    let position = testFen.toPosition
 
-  #   # Test with color swapping (default)
-  #   let mirrored = position.mirrorVertically(swapColors = true)
-  #   check mirrored.us != position.us
+    # Test with color swapping (default)
+    let mirrored = position.mirrorVertically(swapColors = true)
+    check mirrored.us != position.us
 
-  #   # Test without color swapping
-  #   let mirroredNoSwap = position.mirrorVertically(swapColors = false)
-  #   check mirroredNoSwap.us == position.us
+    # Test without color swapping
+    let mirroredNoSwap = position.mirrorVertically(swapColors = false)
+    check mirroredNoSwap.us == position.us

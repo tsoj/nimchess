@@ -80,7 +80,6 @@ func applyResult(game: var Game) =
   # Check if the game has ended and update result if it was still ongoing
   let currentPos = game.currentPosition()
   if game.result == "*":
-
     if currentPos.isMate():
       # Checkmate
       if currentPos.us == white:
@@ -165,8 +164,6 @@ func addMove*(game: var Game, move: Move) =
   game.moves.add(move)
 
   game.applyResult()
-
-
 
 func addMove*(game: var Game, moveString: string) =
   game.addMove moveString.toMove(game.currentPosition)
