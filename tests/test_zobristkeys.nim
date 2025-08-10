@@ -66,7 +66,7 @@ suite "Zobrist Key Tests":
     check pos1.zobristKey != pos2.zobristKey
 
   test "Zobrist key uniqueness across classical positions":
-    var seenKeys: seq[Key] = @[]
+    var seenKeys: seq[ZobristKey] = @[]
 
     for fen in classicalFens:
       let position = fen.toPosition
@@ -77,7 +77,7 @@ suite "Zobrist Key Tests":
       seenKeys.add(key)
 
   test "Zobrist key uniqueness across Chess960 positions":
-    var seenKeys: seq[Key] = @[]
+    var seenKeys: seq[ZobristKey] = @[]
 
     for fen in chess960Fens:
       let position = fen.toPosition

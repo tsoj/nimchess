@@ -222,3 +222,9 @@ func legalMoves*(position: Position): seq[Move] =
     if newPosition.inCheck(position.us):
       continue
     result.add move
+
+func isMate*(position: Position): bool =
+  position.inCheck(position.us) and position.legalMoves().len == 0
+
+func isStalemate*(position: Position): bool =
+  not position.inCheck(position.us) and position.legalMoves().len == 0

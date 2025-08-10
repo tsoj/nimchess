@@ -449,3 +449,5 @@ func notation*(
   for move in pv:
     result &= move.toFunc(currentPosition) & " "
     currentPosition = currentPosition.doMove(move)
+
+const classicalStartPos* = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition

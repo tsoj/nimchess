@@ -6,7 +6,7 @@ import std/[terminal, times]
 
 const maxNumPerftNodes {.intdefine.} = int.high
 
-proc testPerft(usePseudoLegalTest: bool, maxNodes: int) =
+proc testPerft(usePseudoLegalTest: static bool, maxNodes: int) =
   for (fen, trueNumNodesList) in perftFens:
     let position = fen.toPosition
 
@@ -16,7 +16,7 @@ proc testPerft(usePseudoLegalTest: bool, maxNodes: int) =
       if trueNumNodes > maxNodes:
         break
 
-      let perftResult = position.perft(depth)
+      let perftResult = position.perft(depth, usePseudoLegalTest = usePseudoLegalTest)
       check perftResult == trueNumNodes
 
 suite "Perft Tests":

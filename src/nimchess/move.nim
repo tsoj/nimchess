@@ -157,9 +157,10 @@ func enPassantTargetSquare*(move: Move, position: Position): Square =
   if move.moved(position) == pawn and
       not empty(move.source.toBitboard and ranks(a2.flipOrNot())) and
       not empty(move.target.toBitboard and ranks(a4.flipOrNot())):
-    toSquare(ranks(a3.flipOrNot()) and files(move.source))
-  else:
-    noSquare
+    let targetSquare = toSquare(ranks(a3.flipOrNot()) and files(move.source))
+    if not empty(position[pawn, position.enemy] and attackMaskPawnCapture(targetSquare, position.us)):
+      return targetSquare
+  noSquare
 
 func isPseudoLegal*(position: Position, move: Move): bool =
   if move.isNoMove:
@@ -175,6 +176,7 @@ func isPseudoLegal*(position: Position, move: Move): bool =
     us = position.us
     enemy = position.enemy
     occupancy = position.occupancy
+    enPassantTarget = move.enPassantTargetSquare(position)
 
   if move.isCapture != (captured != noPiece):
     return false
@@ -224,11 +226,12 @@ func isPseudoLegal*(position: Position, move: Move): bool =
         if not empty(occupancy and attackMaskPawnQuiet(source, us)):
           return false
         if empty(
-          move.enPassantTargetSquare(position).toBitboard and
+          enPassantTarget.toBitboard and
             attackMaskPawnQuiet(target, enemy) and attackMaskPawnQuiet(source, us)
-        ):
+        ) and not empty(attackMaskPawnCapture(source.up(us), us) and position[pawn, enemy]):
+          # debugEcho "Hi :)"
           return false
-      elif move.enPassantTargetSquare(position) != noSquare:
+      elif enPassantTarget != noSquare:
         return false
 
   if promoted != noPiece:
@@ -265,9 +268,9 @@ func isPseudoLegal*(position: Position, move: Move): bool =
 func doNullMove*(position: Position): Position =
   result = position
 
-  result.zobristKey ^= result.enPassantTarget.Key
+  result.zobristKey ^= result.enPassantTarget.ZobristKey
   result.enPassantTarget = noSquare
-  result.zobristKey ^= result.enPassantTarget.Key
+  result.zobristKey ^= result.enPassantTarget.ZobristKey
 
   result.zobristKey ^= zobristSideToMoveBitmasks[white]
   result.zobristKey ^= zobristSideToMoveBitmasks[black]
@@ -299,12 +302,12 @@ func doMove*(
     us = result.us
     enemy = result.enemy
 
-  result.zobristKey ^= result.enPassantTarget.Key
+  result.zobristKey ^= result.enPassantTarget.ZobristKey
   if enPassantTarget != noSquare:
     result.enPassantTarget = enPassantTarget
   else:
     result.enPassantTarget = noSquare
-  result.zobristKey ^= result.enPassantTarget.Key
+  result.zobristKey ^= result.enPassantTarget.ZobristKey
 
   if moved == king:
     result.zobristKey ^= rookSourceBitmasks[result.rookSource[us][queenside]]

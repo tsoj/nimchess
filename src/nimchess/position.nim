@@ -9,8 +9,8 @@ type Position* = object
   us*: Color
   halfmovesPlayed*: int
   halfmoveClock*: int
-  pawnKey*: Key
-  zobristKey*: Key
+  pawnKey*: ZobristKey
+  zobristKey*: ZobristKey
 
 func enemy*(position: Position): Color =
   position.us.opposite
@@ -126,10 +126,13 @@ func kingSquare*(position: Position, color: Color): Square =
 func inCheck*(position: Position, us: Color): bool =
   position.isAttacked(us, position.kingSquare(us))
 
-func calculateZobristKeys*(position: Position): tuple[zobristKey: Key, pawnKey: Key] =
+func calculateZobristKeys*(
+    position: Position
+): tuple[zobristKey: ZobristKey, pawnKey: ZobristKey] =
   result = (
-    zobristKey: position.enPassantTarget.Key xor zobristSideToMoveBitmasks[position.us],
-    pawnKey: 0.Key,
+    zobristKey:
+      position.enPassantTarget.ZobristKey xor zobristSideToMoveBitmasks[position.us],
+    pawnKey: 0.ZobristKey,
   )
   for color in white .. black:
     for piece in pawn .. king:
@@ -206,3 +209,12 @@ func mirrorHorizontally*(
 
   when not skipKeyCalculation:
     result.setZobristKeys
+
+func `~`*(a, b: Position): bool =
+  ## Tests if two positions are repetition-equal.
+  ## According to the threefold repetition definition, two positions are
+  ## "the same" if pieces of the same type and color occupy the same squares,
+  ## the same player has the move, the remaining castling rights are the same
+  ## and the possibility to capture en passant is the same.
+  a.pieces == b.pieces and a.colors == b.colors and a.rookSource == b.rookSource and
+    a.us == b.us and a.enPassantTarget == b.enPassantTarget

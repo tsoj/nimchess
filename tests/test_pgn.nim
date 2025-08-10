@@ -60,9 +60,7 @@ suite "PGN Parser Tests":
     check game.moves.len == 5 # e4, e5, Nf3, Nc6, Bb5
 
     # Verify moves are correct
-    let startPos =
-      toPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    check game.moves[0] == toMove("e4", startPos)
+    check game.moves[0] == toMove("e4", classicalStartPos)
 
   test "Parse multiple games from string":
     let pgnContent =

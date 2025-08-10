@@ -1,11 +1,11 @@
 import types
 export types
 
-const zobristSideToMoveBitmasks*: array[white .. black, Key] =
+const zobristSideToMoveBitmasks*: array[white .. black, ZobristKey] =
   [18135279880233034376'u64, 1131218582810799482'u64]
 
 const zobristPieceBitmasks*:
-  array[white .. black, array[pawn .. king, array[a1 .. h8, Key]]] = [
+  array[white .. black, array[pawn .. king, array[a1 .. h8, ZobristKey]]] = [
   [
     [
       11434306290927344784'u64, 13459774817681650961'u64, 15481109672442021666'u64,
@@ -300,7 +300,7 @@ const zobristPieceBitmasks*:
   ],
 ]
 
-const rookSourceBitmasks*: array[Square, Key] = [
+const rookSourceBitmasks*: array[Square, ZobristKey] = [
   7862499673336527439'u64, 14101801750694795959'u64, 7538278697290289399'u64,
   2241663887933557553'u64, 11456442563539739318'u64, 14615303835267748197'u64,
   2851081684102253240'u64, 9174179096780574008'u64, 5685251572337425224'u64,

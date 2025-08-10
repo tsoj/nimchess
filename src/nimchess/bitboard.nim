@@ -149,24 +149,20 @@ const
   knightAttackTable = kingKnightAttackTable(0x442800000028440u64.Bitboard)
   kingAttackTable = kingKnightAttackTable(0x8380000000000383u64.Bitboard)
 
-func attackTablePawnQuiet*(color: Color, square: Square): Bitboard =
-  const table: array[white .. black, array[a1 .. h8, Bitboard]] = block:
-    var attackTablePawnQuiet: array[white .. black, array[a1 .. h8, Bitboard]]
-    for square in a2 .. h7:
-      attackTablePawnQuiet[white][square] = square.toBitboard shl 8
-      attackTablePawnQuiet[black][square] = square.toBitboard shr 8
-    attackTablePawnQuiet
-  table[color][square]
+const attackTablePawnQuiet: array[white .. black, array[a1 .. h8, Bitboard]] = block:
+  var attackTablePawnQuiet: array[white .. black, array[a1 .. h8, Bitboard]]
+  for square in a2 .. h7:
+    attackTablePawnQuiet[white][square] = square.toBitboard shl 8
+    attackTablePawnQuiet[black][square] = square.toBitboard shr 8
+  attackTablePawnQuiet
 
-func attackTablePawnCapture*(color: Color, square: Square): Bitboard =
-  const table: array[white .. black, array[a1 .. h8, Bitboard]] = block:
-    var attackTablePawnCapture: array[white .. black, array[a1 .. h8, Bitboard]]
-    for (color, range) in [(white, a1 .. h7), (black, a2 .. h8)]:
-      for square in range:
-        let attacks = diagonals[square] or antiDiagonals[square]
-        attackTablePawnCapture[color][square] = attacks and ranks(square.up(color))
-    attackTablePawnCapture
-  table[color][square]
+const attackTablePawnCapture: array[white .. black, array[a1 .. h8, Bitboard]] = block:
+  var attackTablePawnCapture: array[white .. black, array[a1 .. h8, Bitboard]]
+  for (color, range) in [(white, a1 .. h7), (black, a2 .. h8)]:
+    for square in range:
+      let attacks = diagonals[square] or antiDiagonals[square]
+      attackTablePawnCapture[color][square] = attacks and ranks(square.up(color))
+  attackTablePawnCapture
 
 func isPassedMask*(color: Color, square: Square): Bitboard =
   const table: array[white .. black, array[a1 .. h8, Bitboard]] = block:
@@ -214,10 +210,10 @@ func homeRank*(color: Color): Bitboard =
     ranks(a8)
 
 func attackMaskPawnQuiet*(square: Square, color: Color): Bitboard =
-  attackTablePawnQuiet(color, square)
+  attackTablePawnQuiet[color][square]
 
 func attackMaskPawnCapture*(square: Square, color: Color): Bitboard =
-  attackTablePawnCapture(color, square)
+  attackTablePawnCapture[color][square]
 
 func attackMaskKnight*(square: Square, occupancy: Bitboard): Bitboard =
   knightAttackTable[square]
