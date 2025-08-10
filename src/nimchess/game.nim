@@ -51,7 +51,7 @@ func repetitionCount*(game: Game, moveIndex: int = -1): int =
   let positions = game.positions()
   let targetIndex =
     if moveIndex <= -1:
-      positions.len - moveIndex
+      positions.len + moveIndex
     else:
       moveIndex
 
@@ -60,7 +60,7 @@ func repetitionCount*(game: Game, moveIndex: int = -1): int =
 
   let targetPosition = positions[targetIndex]
 
-  for pos in positions:
+  for pos in positions[0..targetIndex]:
     if pos ~ targetPosition:
       result += 1
 
