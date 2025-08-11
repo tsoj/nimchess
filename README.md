@@ -1,6 +1,6 @@
 # nimchess
 
-A fast and efficient chess library for Nim, with move generation, move validation, and support for common chess formats.
+A fast and efficient chess library for Nim, with move generation and support for common chess formats.
 
 [Docs](https://tsoj.github.io/nimchess/)
 

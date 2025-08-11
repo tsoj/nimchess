@@ -41,7 +41,7 @@ proc cleanLineOfComments(line: string, inBraceCommentDepth: var int): string =
   result = ""
 
   for c in line:
-    if c == ';':
+    if c == ';' and inBraceCommentDepth == 0:
       # Rest of line is comment
       break
     elif c in ['}', ')']:
