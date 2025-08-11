@@ -9,7 +9,7 @@ A fast and efficient chess library for Nim, with move generation and support for
 Add nimchess to your `.nimble` file:
 
 ```nim
-requires "nimchess >= 0.1.0"
+requires "nimchess >= 0.1.4"
 ```
 
 Or install directly:
