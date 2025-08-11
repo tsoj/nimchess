@@ -181,7 +181,7 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
         rookSource
       else:
         let rookSourceBit =
-          files(parseEnum[Square](castlingChar.toLowerAscii & "1")) and homeRank(us)
+          file(parseEnum[Square](castlingChar.toLowerAscii & "1")) and homeRank(us)
 
         if rookSourceBit.countSetBits != 1:
           raise newException(
@@ -408,9 +408,9 @@ func validSANMove(position: Position, move: Move, san: string): bool =
     of 'x':
       isCapture = true
     of '1' .. '8':
-      sourceRank = ranks(toSquare("a" & $c))
+      sourceRank = rank(toSquare("a" & $c))
     of 'a' .. 'h':
-      sourceFile = files(toSquare($c & "1"))
+      sourceFile = file(toSquare($c & "1"))
     else:
       discard # Skip other characters like annotations
     inc pos

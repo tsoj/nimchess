@@ -7,7 +7,7 @@ type CastlingSide* = enum
 
 func connectOnFile(a, b: Square): Bitboard =
   result = 0.Bitboard
-  if not empty(ranks(a) and ranks(b)):
+  if not empty(rank(a) and rank(b)):
     var currentSquare = min(a, b)
     while true:
       result = result or currentSquare.toBitboard

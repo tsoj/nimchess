@@ -148,9 +148,9 @@ func enPassantTargetSquare*(move: Move, position: Position): Square =
     if position.us == white: sq else: sq.mirrorVertically
 
   if move.moved(position) == pawn and
-      not empty(move.source.toBitboard and ranks(a2.flipOrNot())) and
-      not empty(move.target.toBitboard and ranks(a4.flipOrNot())):
-    let targetSquare = toSquare(ranks(a3.flipOrNot()) and files(move.source))
+      not empty(move.source.toBitboard and rank(a2.flipOrNot())) and
+      not empty(move.target.toBitboard and rank(a4.flipOrNot())):
+    let targetSquare = toSquare(rank(a3.flipOrNot()) and file(move.source))
     if not empty(
       position[pawn, position.enemy] and attackMaskPawnCapture(
         targetSquare, position.us
@@ -241,7 +241,7 @@ func isPseudoLegal*(position: Position, move: Move): bool =
       return false
     if promoted notin knight .. queen:
       return false
-    if empty(target.toBitboard and (ranks(a1) or ranks(a8))):
+    if empty(target.toBitboard and (rank(a1) or rank(a8))):
       return false
 
   if move.isCastling:

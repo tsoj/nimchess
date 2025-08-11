@@ -49,7 +49,7 @@ func `$`*(b: Bitboard): string =
       none(string)
   )
 
-func ranks*(square: Square): Bitboard =
+func rank*(square: Square): Bitboard =
   const ranksTable: array[a1 .. h8, Bitboard] = block:
     var ranks: array[a1 .. h8, Bitboard]
     for square in a1 .. h8:
@@ -57,7 +57,7 @@ func ranks*(square: Square): Bitboard =
     ranks
   ranksTable[square]
 
-func files*(square: Square): Bitboard =
+func file*(square: Square): Bitboard =
   const filesTable: array[a1 .. h8, Bitboard] = block:
     var files: array[a1 .. h8, Bitboard]
     for square in a1 .. h8:
@@ -75,8 +75,8 @@ func mirrorHorizontally*(bitboard: Bitboard): Bitboard =
   result = 0.Bitboard
   for i in 0 .. 3:
     let
-      f1 = files(i.Square)
-      f2 = files((7 - i).Square)
+      f1 = file(i.Square)
+      f2 = file((7 - i).Square)
       shiftAmount = 7 - 2 * i
     result = result or ((bitboard and f1) shl shiftAmount)
     result = result or ((bitboard and f2) shr shiftAmount)
@@ -131,11 +131,11 @@ const
 func hashkeyRank(square: Square, occupancy: Bitboard): uint8 =
   (((occupancy shr ((square.int8 div 8) * 8)) shr 1) and 0b111111.Bitboard).uint8
 func hashkeyFile(square: Square, occupancy: Bitboard): uint8 =
-  ((((((occupancy shr (square.int8 mod 8)) and files(a1)).uint64 * mainDiagonal.uint64) shr 56) shr 1) and 0b111111).uint8
+  ((((((occupancy shr (square.int8 mod 8)) and file(a1)).uint64 * mainDiagonal.uint64) shr 56) shr 1) and 0b111111).uint8
 func hashkeyDiagonal(square: Square, occupancy: Bitboard): uint8 =
-  (((((occupancy and diagonals[square]).uint64 * files(a1).uint64) shr 56) shr 1) and 0b111111).uint8
+  (((((occupancy and diagonals[square]).uint64 * file(a1).uint64) shr 56) shr 1) and 0b111111).uint8
 func hashkeyAntiDiagonal(square: Square, occupancy: Bitboard): uint8 =
-  (((((occupancy and antiDiagonals[square]).uint64 * files(a1).uint64) shr 56) shr 1) and 0b111111).uint8
+  (((((occupancy and antiDiagonals[square]).uint64 * file(a1).uint64) shr 56) shr 1) and 0b111111).uint8
 #!fmt: on
 
 proc attackTable(
@@ -176,27 +176,27 @@ const attackTablePawnCapture: array[white .. black, array[a1 .. h8, Bitboard]] =
   for (color, range) in [(white, a1 .. h7), (black, a2 .. h8)]:
     for square in range:
       let attacks = diagonals[square] or antiDiagonals[square]
-      attackTablePawnCapture[color][square] = attacks and ranks(square.up(color))
+      attackTablePawnCapture[color][square] = attacks and rank(square.up(color))
   attackTablePawnCapture
 
 func isPassedMask*(color: Color, square: Square): Bitboard =
   const table: array[white .. black, array[a1 .. h8, Bitboard]] = block:
     var isPassedMask: array[white .. black, array[a1 .. h8, Bitboard]]
     for square in a1 .. h8:
-      isPassedMask[white][square] = files(square)
+      isPassedMask[white][square] = file(square)
       if not square.isLeftEdge:
-        isPassedMask[white][square] = isPassedMask[white][square] or files(square.left)
+        isPassedMask[white][square] = isPassedMask[white][square] or file(square.left)
       if not square.isRightEdge:
-        isPassedMask[white][square] = isPassedMask[white][square] or files(square.right)
+        isPassedMask[white][square] = isPassedMask[white][square] or file(square.right)
       isPassedMask[black][square] = isPassedMask[white][square]
 
       for j in 0 .. 7:
         if j <= (square.int8 div 8):
           isPassedMask[white][square] =
-            isPassedMask[white][square] and not ranks((j * 8).Square)
+            isPassedMask[white][square] and not rank((j * 8).Square)
         if j >= (square.int8 div 8):
           isPassedMask[black][square] =
-            isPassedMask[black][square] and not ranks((j * 8).Square)
+            isPassedMask[black][square] and not rank((j * 8).Square)
     isPassedMask
   table[color][square]
 
@@ -220,9 +220,9 @@ func mask5x5*(square: Square): Bitboard =
 func homeRank*(color: Color): Bitboard =
   case color
   of white:
-    ranks(a1)
+    rank(a1)
   of black:
-    ranks(a8)
+    rank(a8)
 
 func attackMaskPawnQuiet*(square: Square, color: Color): Bitboard =
   attackTablePawnQuiet[color][square]
@@ -230,21 +230,21 @@ func attackMaskPawnQuiet*(square: Square, color: Color): Bitboard =
 func attackMaskPawnCapture*(square: Square, color: Color): Bitboard =
   attackTablePawnCapture[color][square]
 
-func attackMaskKnight*(square: Square, occupancy: Bitboard): Bitboard =
+func attackMaskKnight(square: Square, occupancy: Bitboard): Bitboard =
   knightAttackTable[square]
 
-func attackMaskBishop*(square: Square, occupancy: Bitboard): Bitboard =
+func attackMaskBishop(square: Square, occupancy: Bitboard): Bitboard =
   antiDiagonalAttackTable[square][hashkeyAntiDiagonal(square, occupancy)] or
     diagonalAttackTable[square][hashkeyDiagonal(square, occupancy)]
 
-func attackMaskRook*(square: Square, occupancy: Bitboard): Bitboard =
+func attackMaskRook(square: Square, occupancy: Bitboard): Bitboard =
   rankAttackTable[square][hashkeyRank(square, occupancy)] or
     fileAttackTable[square][hashkeyFile(square, occupancy)]
 
-func attackMaskQueen*(square: Square, occupancy: Bitboard): Bitboard =
+func attackMaskQueen(square: Square, occupancy: Bitboard): Bitboard =
   attackMaskBishop(square, occupancy) or attackMaskRook(square, occupancy)
 
-func attackMaskKing*(square: Square, occupancy: Bitboard): Bitboard =
+func attackMaskKing(square: Square, occupancy: Bitboard): Bitboard =
   kingAttackTable[square]
 
 func attackMask*(piece: knight .. king, square: Square, occupancy: Bitboard): Bitboard =

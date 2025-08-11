@@ -53,9 +53,9 @@ func generateQuiets(position: Position, piece: Piece, moves: var openArray[Move]
       )
 
 func pawnLeftAttack(pawns: Bitboard, color: Color): Bitboard =
-  (pawns and not files(a1)).up(color).left
+  (pawns and not file(a1)).up(color).left
 func pawnRightAttack(pawns: Bitboard, color: Color): Bitboard =
-  (pawns and not files(h1)).up(color).right
+  (pawns and not file(h1)).up(color).right
 
 const firstPawnPushRank = [
   white: homeRank(white).up(white).up(white), black: homeRank(black).up(black).up(black)

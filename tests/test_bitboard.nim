@@ -91,8 +91,8 @@ suite "Bitboard Tests":
     check mask.isSet(g7) == false
 
   test "homeRank":
-    check homeRank(white) == ranks(a1)
-    check homeRank(black) == ranks(a8)
+    check homeRank(white) == rank(a1)
+    check homeRank(black) == rank(a8)
 
     # Verify that home ranks contain the correct squares
     let whiteHome = homeRank(white)

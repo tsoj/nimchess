@@ -34,8 +34,12 @@ func `[]=`*(position: var Position, color: Color, bitboard: Bitboard) =
   position.colors[color] = bitboard
 
 func `[]`*(position: Position, piece: Piece, color: Color): Bitboard =
+  ## Returns the bitboard that is set to 1 at each square where
+  ## both `piece` and `color` are of the specified arguments.
   position[color] and position[piece]
 func `[]`*(position: Position, color: Color, piece: Piece): Bitboard =
+  ## Returns the bitboard that is set to 1 at each square where
+  ## both `piece` and `color` are of the specified arguments.
   position[color] and position[piece]
 
 func addPiece*(position: var Position, color: Color, piece: Piece, target: Square) =
