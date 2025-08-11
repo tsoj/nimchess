@@ -1,5 +1,5 @@
 import types, bitboard, castling, zobristbitmasks
-export types, bitboard, castling
+export types, bitboard, CastlingSide
 
 type Position* = object
   pieces*: array[pawn .. king, Bitboard]
@@ -152,6 +152,11 @@ func setZobristKeys*(position: var Position) =
   (position.zobristKey, position.pawnKey) = position.calculateZobristKeys
 
 func isChess960*(position: Position): bool =
+  const
+    classicalRookSource =
+      [white: [queenside: a1, kingside: h1], black: [queenside: a8, kingside: h8]]
+    classicalKingSource = [white: e1, black: e8]
+
   for color in white .. black:
     if position.rookSource[color] != [noSquare, noSquare] and
         position.kingSquare(color) != classicalKingSource[color]:

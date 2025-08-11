@@ -21,7 +21,7 @@ func currentPosition*(game: Game): Position =
     return game.startPosition
   return game.positions[^1]
 
-func getTargetIndex*(game: Game, moveIndex: int = -1): int =
+func getTargetIndex(game: Game, moveIndex: int = -1): int =
   ## Helper function to get the target index for a move.
   ## If moveIndex is -1, returns the current position index.
   let positions = game.positions()

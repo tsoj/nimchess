@@ -1,7 +1,6 @@
 import position, bitboard, move, types, castling
 export position, move
 
-# TODO clean up, remove unused arguments
 func addMove(
     moves: var openArray[Move],
     index: var int,
@@ -163,7 +162,7 @@ func generateCastlingMoves(position: Position, moves: var openArray[Move]): int 
 
     # king will never be in check
     var kingInCheck = false
-    for checkSquare in checkSensitive[us][castlingSide][kingSource]:
+    for checkSquare in checkSensitive(us, castlingSide, kingSource):
       if position.isAttacked(us, checkSquare):
         kingInCheck = true
         break

@@ -239,7 +239,7 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
 
 func toUCI*(move: Move, position: Position): string =
   if move.isCastling and not position.isChess960:
-    return $move.source & $kingTarget[position.us][move.castlingSide(position)]
+    return $move.source & $castlingKingTarget(position.us, move.castlingSide(position))
   $move
 
 func toMoveFromUCI*(s: string, position: Position): Move =
@@ -260,7 +260,7 @@ func toMoveFromUCI*(s: string, position: Position): Move =
       if move.target == target:
         return move
       if move.isCastling and
-          target == kingTarget[position.us][move.castlingSide(position)] and
+          target == castlingKingTarget(position.us, move.castlingSide(position)) and
           not position.isChess960:
         return move
   raise newException(ValueError, "Move is illegal: " & s)

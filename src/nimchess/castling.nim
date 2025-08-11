@@ -28,15 +28,18 @@ func blockSensitive(
           connectOnFile(source, target[us][castlingSide])
 
 const
-  kingTarget* =
+  kingTargetTable =
     [white: [queenside: c1, kingside: g1], black: [queenside: c8, kingside: g8]]
-  rookTarget* =
+  rookTargetTable =
     [white: [queenside: d1, kingside: f1], black: [queenside: d8, kingside: f8]]
-  classicalRookSource* =
-    [white: [queenside: a1, kingside: h1], black: [queenside: a8, kingside: h8]]
-  classicalKingSource* = [white: e1, black: e8]
-  blockSensitiveRook = blockSensitive(rookTarget)
-  blockSensitiveKing = blockSensitive(kingTarget)
+  blockSensitiveRook = blockSensitive(rookTargetTable)
+  blockSensitiveKing = blockSensitive(kingTargetTable)
+
+func castlingKingTarget*(us: Color, castlingSide: CastlingSide): Square =
+  kingTargetTable[us][castlingSide]
+
+func castlingRookTarget*(us: Color, castlingSide: CastlingSide): Square =
+  rookTargetTable[us][castlingSide]
 
 func blockSensitive*(
     us: Color, castlingSide: CastlingSide, kingSource, rookSource: Square
@@ -46,18 +49,25 @@ func blockSensitive*(
     blockSensitiveRook[us][castlingSide][rookSource]
   ) and not (kingSource.toBitboard or rookSource.toBitboard)
 
-const checkSensitive* = block:
-  var checkSensitive:
-    array[white .. black, array[CastlingSide, array[a1 .. h8, seq[Square]]]]
+func checkSensitive*(
+    us: Color, castlingSide: CastlingSide, kingSource: Square
+): seq[Square] =
+  const checkSensitive = block:
+    var checkSensitive:
+      array[white .. black, array[CastlingSide, array[a1 .. h8, seq[Square]]]]
 
-  for us in white .. black:
-    for castlingSide in queenside .. kingside:
-      for kingSource in a1 .. h8:
-        let b =
-          blockSensitiveKing[us][castlingSide][kingSource] and
-          # I don't need to check if the king will be in check after the move is done
-          (kingSource.toBitboard or not kingTarget[us][castlingSide].toBitboard)
-        for square in b:
-          checkSensitive[us][castlingSide][kingSource].add(square)
+    for color in white .. black:
+      for castlingSide in queenside .. kingside:
+        for kingSource in a1 .. h8:
+          let b =
+            blockSensitiveKing[color][castlingSide][kingSource] and
+            # I don't need to check if the king will be in check after the move is done
+            (
+              kingSource.toBitboard or
+              not kingTargetTable[color][castlingSide].toBitboard
+            )
+          for square in b:
+            checkSensitive[color][castlingSide][kingSource].add(square)
 
-  checkSensitive
+    checkSensitive
+  checkSensitive[us][castlingSide][kingSource]

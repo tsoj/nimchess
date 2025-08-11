@@ -1,4 +1,4 @@
-import types, bitboard, position, zobristbitmasks
+import types, bitboard, position, zobristbitmasks, castling
 export types, position
 
 type
@@ -126,13 +126,7 @@ func `$`*(move: Move): string =
     result &= move.promoted.notation
 
 func moved*(move: Move, position: Position): Piece =
-  result = position.pieceAt(move.source)
-  # if result != noPiece:
-  #   debugEcho position
-  #   debugEcho move
-  #   debugEcho result
-  #   debugEcho position.coloredPieceAt(move.source).color
-  #   assert result == noPiece or position.coloredPieceAt(move.source).color == position.us
+  position.pieceAt(move.source)
 
 func captured*(move: Move, position: Position): Piece =
   if move.isCastling:
@@ -140,7 +134,6 @@ func captured*(move: Move, position: Position): Piece =
   elif move.isEnPassantCapture:
     pawn
   elif move.isCapture:
-    # assert position.coloredPieceAt(move.target).color == position.enemy
     position.pieceAt(move.target)
   else:
     noPiece
@@ -267,7 +260,7 @@ func isPseudoLegal*(position: Position, move: Move): bool =
         ):
       return false
 
-    for checkSquare in checkSensitive[us][castlingSide][kingSource]:
+    for checkSquare in checkSensitive(us, castlingSide, kingSource):
       if position.isAttacked(us, checkSquare):
         return false
 
@@ -347,8 +340,8 @@ func doMove*(
       rookSource = target
       kingSource = source
       castlingSide = move.castlingSide(position)
-      rookTarget = rookTarget[us][castlingSide]
-      kingTarget = kingTarget[us][castlingSide]
+      rookTarget = castlingRookTarget(us, castlingSide)
+      kingTarget = castlingKingTarget(us, castlingSide)
 
     result.removePiece(us, king, kingSource)
     result.removePiece(us, rook, rookSource)
