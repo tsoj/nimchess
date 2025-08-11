@@ -532,6 +532,123 @@ Rh8 {-6.63/29 5.0s} 75. Re6 {+7.97/28 6.8s} Rh1 {-7.12/26 5.0s}
 76. Rc6 {+8.52/27 8.6s} Rg1+ {-7.80/24 5.0s} 77. Kf3 {+8.86/27 6.4s}
 Rf1+ {-8.11/24 5.0s, White wins by adjudication} 1-0
 
+[Event "Reykjavik"]
+[Site "Reykjavik ISL"]
+[Date "1987.02.20"]
+[Round "2"]
+[White "Mikhail Tal"]
+[Black "Johann Hjartarson"]
+[Result "1-0"]
+[ECO "C99"]
+[Annotator "USER"]
+[PlyCount "87"]
+[EventDate "1987.??.??"]
+
+{Last but not least, let's take a look at a famous and celebrated game that
+Tal played in his later years. It was played in Reykjavik in 1987 and Tal's
+opponent was well-known Icelandic grandmaster Johann Hjartarson.} 1. e4 {
+Back to old loves in the old age?} e5 2. Nf3 Nc6 3. Bb5 {As Kasparov wrote
+somewhere - "The ability to handle different structures that result from the
+Ruy Lopez is what determins the class of a certain player". It is no wonder
+most World Champions played the Ruy with at least one colour - and Tal was no
+exception.} a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d6 9. h3 Na5 {
+The Chigorin variation of the Closed Ruy Lopez is one of the oldest systems at
+Black's disposal in this complex opening that has been played on all levels
+for more than 100 years. These days, it is not the most frequent guest at the
+highest level as there are other, more reliable systems available to Black,
+but for average patzers like you and me, there is a very high probability we
+are going to encounter it sooner or later if we play 1.e4, 2.Nf3, 3.Bb5 and 4.
+Ba4.} 10. Bc2 c5 11. d4 Qc7 12. Nbd2 {This is the old way of handling this
+variation.} (12. d5 {These days, under the influence of the modern engines,
+people have started realizing more and more that closing the center in all of
+these closed systems of the Ruy Lopez is actually a very legitimate - maybe
+even the most critical - way of fighting for the opening advantage.}) 12... Bd7
+{One of the numerous possibilities at Black's disposal in this system.} 13. Nf1
+cxd4 14. cxd4 Rac8 15. Ne3 {[%cal Ge3c4,Ge3f5,Ge3d5,Ge3c2] The knight is very
+agile on e3, covering the important c4 square, defending the bishop on c2 and
+potentially eyeing the d5 and f5 squares.} Nc6 {A typical Chigorin maneuver.
+The knight puts pressure on the d4 pawn and intends to go to b4 after White
+closes the center, in order to harass the bishop on c2.} 16. d5 Nb4 17. Bb1 a5
+{[%csl Gc5][%cal Gb4a6,Gb5b4,Ga6c5] One of the ideas behind Black's setup is
+this queenside expansion. They want to get the moves a5-b4 and then securely
+land the knight on c5.} 18. a3 Na6 19. b4 {A very nice tactical way of
+preventing Black from executing this plan. Remember this idea of playing b4 in
+this type of structure as it happens very often in the Ruy.} g6 {This move is
+a common idea in different Ruy Lopez structures. Sometimes, it leads to the
+fianchetto of the bishop via f8-g7 route, but sometimes the knight can also
+appear on this square.} (19... axb4 20. axb4 Nxb4 {Is bad as after} 21. Bd2 {
+It transpires that the knight is actually trapped. A pattern worth knowing!})
+20. Bd2 {Now White obtains a very typical advantage in this type of variation
+because he has a big space advantage and the knight on a6 is completely out of
+the game. However, Black's position is very sturdy and solid and it takes a
+great player to outmaneuver and outplay Black from a position as this.} axb4 {
+White was potentially threatening to take on a5, so Black avoids this option,
+even though it does open the a-file.} 21. axb4 Qb7 22. Bd3 {[%csl Rb5] Another
+feature of this position is the weakness of the b5 pawn which White can
+utilize when maneuvering the pieces.} Nc7 {[%csl Gb5][%cal Gc7b5,Gc7e8,Ge8g7]
+Adding some protection to the b5 square and maybe - just maybe - hinting at
+the potential Ne8-Ng7 route?} 23. Nc2 {The knight on e3 has finally done its
+job and now it moves out of the way to free the bishop on d2 to seek a more
+promising role.} Nh5 {[%cal Gh5f4,Gf7f5] Black has to create counterplay on
+the kingside - either with the Nf4 knight jump or with the f5 pawn push.} 24.
+Be3 {White decides to ignore it and threaten Ra7 for now, although it is not
+100% clear whether the bishop is better placed on e3 or d2 (given that on e3
+it can be hit with the f-pawn). There are other alternatives, but the
+character of the position remains the same nevertheless.} Ra8 25. Qd2 Rxa1 {
+It is logical for Black to try and exchange some pieces when they have less
+space.} 26. Nxa1 {An unconventional decision (how many of us would
+automatically recapture with the rook)? But White wants to bring the knight to
+b3 square and then potentially eye the a5 or even the c5 square (spoiler alert)
+.} f5 {[%cal Gf5f4] Finally Black initiaties counterplay at the moment when
+our queen is locking the bishop and when f4 is actually a threat.} 27. Bh6 {
+[%cal Rh6f8] Placing the bishop outside of the chain and avoiding the threat.}
+Ng7 $2 {But this move is actually very passive and totally misguided. The
+knight was very decent on h5 and it was absolutely not necessary to move it.
+Hjartarson was maybe considering a kingside attack with f4 and so on, but this
+is a wrong idea in this position.} 28. Nb3 f4 {Closing down the position, in
+my opinion, only helps White as now the counterplay on the kingside is not
+happening any time soon and it is unrealistic to expect any sort of King's
+Indian pawn storm with g5-g4 given the current positioning of the pieces.} 29.
+Na5 Qb6 30. Rc1 Ra8 31. Qc2 {[%csl Rc6] White treis to increase the pressure
+on the queenside and bring the pieces closer. The c6 square is looking quite
+juicy.} Nce8 32. Qb3 Bf6 33. Nc6 Nh5 {Now the knight arrives back - but where
+is it going now that the f4 square has been covered?} 34. Qb2 Bg7 {Maybe
+Hjartarson was hoping to get the pawn chain going with g5-g4 and so on, but it
+is way too slow.} 35. Bxg7 Kxg7 {The culminating moment of this entire game!}
+36. Rc5 $3 {A wonderful move, that is not only spectacular, but also very
+strong! The idea is very simple - either the pawn on b5 falls - or the pawn on
+d6 is diverted from the defence of the e5 pawn. One of those rare cases where
+Tal's sacrifice was very positionally founded - and very correct :).} Qa6 (
+36... dxc5 {The rook can't be accepted as after} 37. Nfxe5 {A deadly
+discovered check is threatened, the bishop on d7 falls and the attack on
+dark-squares will rage. For example, after} (37. Ncxe5 {It is slightly more
+precise to include the f-knight, although this capture also works, even though
+it allows} Qf6 {Here the prozaic} 38. bxc5 {Is sufficient, although it is
+clear that the other capture is even stronger.}) 37... Qa6 38. Nxd7+ Nhf6 {
+White can simply go for the endgame with} 39. Nxc5 Qa1+ 40. Qxa1 Rxa1+ 41. Kh2
+{As White has two pawns for the exchange already, the b5 pawn is falling and
+all White's pieces are perfectly placed, protecting e4,b4, d5 and so on.}) 37.
+Rxb5 {And now the pawn falls and White obtains a strong passed b-pawn.} Nc7 $2
+{A final mistake in a lost position.} (37... Bxc6 {For better or for worse,
+Black should have snatched on c6, although after} 38. dxc6 Qxc6 39. Ra5 {
+The position remains lost - the b-pawn is too strong. But at least the game
+doesn't end at once.}) 38. Rb8 {[%cal Rd3a6] Now White simplifies into a much
+more winning endgame with the help of another very spectacular sacrifice.
+First, a simple discovered attack on the queen.} Qxd3 39. Ncxe5 {A tremendous
+blow at the most fortified point - once again utilizing the weakness of the
+dark-squares around the black king.} Qd1+ 40. Kh2 Ra1 {Threatening mate on the
+spot and at least forcing accuraccy to the very end.} (40... dxe5 {Leads to a
+mate by force after} 41. Qxe5+ Nf6 42. Qe7+ Kh6 {There is no way Black can
+survive here with such a king.} 43. Rxa8 Nxa8 44. Qf8+ Kh5 45. Qxf6) 41. Ng4+
+Kf7 42. Nh6+ Ke7 43. Ng8+ {And here Hjartarson resigned not waiting for} Kf7
+44. Ng5# {Although he might have as well allowed mate here to honor Tal's
+brilliant play. A fascinating game and one of the rare examples where Tal's
+combinations had a strictly positional foundation. --- On the other hand,
+apart from the splendid combination, I also found Tal's handling of a typical
+Spanish middlegame extremely instructive. We often admire his combinations and
+tend to forget he was also a very well-rounded player with above average
+positional understanding.} 1-0
+
 [Event "CCRL 40/4"]
 [Site "CCRL"]
 [Date "2006.05.24"]

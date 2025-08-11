@@ -36,19 +36,24 @@ proc parseHeaders(stream: Stream): Table[string, string] =
 
     result[key] = value
 
+func isInComment(x: Table[char, int]): bool =
+  x['{'] > 0 or x['('] > 0
+
 # Helper function to clean a line of comments
-proc cleanLineOfComments(line: string, inBraceCommentDepth: var int): string =
+proc cleanLineOfComments(line: string, commentDepth: var Table[char, int]): string =
   result = ""
 
   for c in line:
-    if c == ';' and inBraceCommentDepth == 0:
+    let d = {'}': '{', ')': '('}.toTable.getOrDefault(c, 'x')
+
+    if c == ';' and not commentDepth.isInComment:
       # Rest of line is comment
       break
-    elif c in ['}', ')']:
-      inBraceCommentDepth -= 1
-    elif c in ['{', '(']:
-      inBraceCommentDepth += 1
-    elif inBraceCommentDepth == 0:
+    elif c in commentDepth:
+      commentDepth[c] += 1
+    elif d in commentDepth and commentDepth[d] > 0:
+      commentDepth[d] -= 1
+    elif not commentDepth.isInComment:
       result.add(c)
 
 proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
@@ -56,7 +61,7 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
     moves: seq[Move] = @[]
     position = startPos
     content = ""
-    inBraceCommentDepth = 0
+    commentDepth = {'{': 0, '(': 0}.toTable
     gameResult = none string
 
   const resultTokens = ["1-0", "0-1", "1/2-1/2", "*"]
@@ -67,10 +72,10 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
     let line = stream.readLine()
 
     # Clean the line of comments first
-    let cleanLine = cleanLineOfComments(line, inBraceCommentDepth).strip()
+    let cleanLine = cleanLineOfComments(line, commentDepth).strip()
 
     # If we hit a line starting with [, it's the next game's headers (only check if not in comment)
-    if inBraceCommentDepth == 0 and cleanLine.startsWith("["):
+    if not commentDepth.isInComment and cleanLine.startsWith("["):
       # Put the line back by seeking to its start
       stream.setPosition(currentPos)
       break
@@ -134,6 +139,8 @@ proc readSingleGameFromPgn(stream: Stream): Game =
     Game(headers: headers, moves: moves, startPosition: startPos, result: gameResult)
 
 iterator readPgnFromStreamIter*(stream: Stream, suppressWarnings = false): Game =
+  var lastGoodPosition = 0
+
   while not stream.atEnd():
     # Skip empty lines
     var line = ""
@@ -149,18 +156,23 @@ iterator readPgnFromStreamIter*(stream: Stream, suppressWarnings = false): Game 
 
     try:
       let game = readSingleGameFromPgn(stream)
+      lastGoodPosition = stream.getPosition()
       yield game
     except ValueError:
       if not suppressWarnings:
         let currentPos = stream.getPosition()
         stream.setPosition(0)
-        var lineNumber = 1
+        var
+          lineNumberEnd = 1
+          lineNumberStart = 1
         for i in 0 ..< currentPos:
           if stream.readChar() == '\n':
-            lineNumber += 1
+            lineNumberEnd += 1
+            if i <= lastGoodPosition:
+              lineNumberStart += 1
 
         assert currentPos == stream.getPosition()
-        echo &"WARNING: Failed to read game before line {lineNumber}\n--> ",
+        echo &"WARNING: Failed to read game between lines {lineNumberStart} and {lineNumberEnd}\n--> ",
           getCurrentException().msg
 
 iterator readPgnFileIter*(filename: string, suppressWarnings = false): Game =
