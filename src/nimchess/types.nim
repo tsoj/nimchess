@@ -38,8 +38,14 @@ type
 
   ZobristKey* = uint64
 
-func newSquare*(file: int, rank: int): Square =
+func newSquare*(file: 0 .. 7, rank: 0 .. 7): Square =
   Square(rank * 8 + file)
+
+func rankNumber*(square: Square): 0 .. 7 =
+  square.int div 8
+
+func fileNumber*(square: Square): 0 .. 7 =
+  square.int mod 8
 
 func up*(square: Square): Square =
   (square.int8 + 8).Square
@@ -80,6 +86,18 @@ func mirrorVertically*(square: Square): Square =
 func mirrorHorizontally*(square: Square): Square =
   (square.int8 xor 7).Square
 
+func squareDistance*(a: Square, b: Square): int =
+  ## Gets the Chebyshev distance (i.e., the number of king steps) from square a to b.
+  let fileDiff = abs(a.fileNumber - b.fileNumber)
+  let rankDiff = abs(a.rankNumber - b.rankNumber)
+  max(fileDiff, rankDiff)
+
+func squareManhattanDistance*(a: Square, b: Square): int =
+  ## Gets the Manhattan/Taxicab distance (i.e., the number of orthogonal king steps) from square a to b.
+  let fileDiff = abs(a.fileNumber - b.fileNumber)
+  let rankDiff = abs(a.rankNumber - b.rankNumber)
+  fileDiff + rankDiff
+
 func `^=`*(a: var ZobristKey, b: ZobristKey) =
   a = a xor b
 
@@ -108,7 +126,7 @@ func notation*(piece: Piece): string =
 
 func notation*(coloredPiece: ColoredPiece): string =
   result = coloredPiece.piece.notation
-  if coloredPiece.color == white:
+  if coloredPiece.piece != noPiece and coloredPiece.color == white:
     result = result.toUpperAscii
 
 func `$`*(coloredPiece: ColoredPiece): string =
@@ -144,3 +162,8 @@ func toColoredPiece*(s: char): ColoredPiece =
 
   let color = if s.isLowerAscii: black else: white
   ColoredPiece(color: color, piece: piece)
+
+proc `==`*(a, b: ColoredPiece): bool =
+  result = a.piece == b.piece
+  if result and a.piece == noPiece:
+    result = a.color == b.color
