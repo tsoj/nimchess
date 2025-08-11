@@ -8,6 +8,8 @@ export bitboard, game, move, movegen, pgn, position, strchess, types
 ## position manipulation, and support for common chess formats like FEN and PGN.
 ## The library uses bitboards for efficient board representation and move generation.
 ##
+## `GitHub <https://github.com/tsoj/nimchess>`_
+##
 ## Overview
 ## ========
 ##
