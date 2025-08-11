@@ -322,7 +322,6 @@ func doMove*(
     result.zobristKey ^= rookSourceBitmasks[result.rookSource[us][queenside]]
     result.zobristKey ^= rookSourceBitmasks[result.rookSource[us][kingside]]
     result.rookSource[us] = [noSquare, noSquare]
-    # We should xor by noSquare twice, but that's basically a no-op
 
   for side in queenside .. kingside:
     if result.rookSource[us][side] == source:
