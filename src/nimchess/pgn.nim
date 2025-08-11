@@ -90,31 +90,18 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
     content.add(cleanLine & " ")
 
   # Clean up the move text further
-  content = content.multiReplace(
-    [
-      ("\n", " "),
-      ("\r", " "),
-      ("\t", " "),
-      (".", " "),
-      ("!", " "),
-      ("?", " "),
-      ("+", " "),
-      ("#", " "),
-    ]
-  )
+  content = content.multiReplace(({'\n', '\r', '\t', '.', '!', '?', '+', '#'}, ' '))
 
   # Split into tokens
   let tokens = content.split().filterIt(it.len > 0)
 
   for token in tokens:
-    var cleanToken = token
-
-    # Skip empty tokens or pure numbers
-    if cleanToken.len == 0 or cleanToken.allIt(it.isDigit()) or
-        cleanToken in resultTokens or cleanToken.startsWith("$"):
+    # Skip empty tokens or pure numbers or special $ markers
+    if token.len == 0 or token.allIt(it.isDigit()) or token in resultTokens or
+        token.startsWith("$"):
       continue
 
-    let move = toMove(cleanToken, position)
+    let move = toMove(token, position)
     moves.add(move)
     position = position.doMove(move, allowNullMove = true)
 

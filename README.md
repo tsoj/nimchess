@@ -65,7 +65,8 @@ echo game.result
 
 ## Requirements
 
-- Nim >= 2.2.4
+- Requires Nim >= 2.2.4
+- Ideally compile with `-d:danger --cc:clang --passC:"-flto" --passL:"-flto"` for optimal performance
 
 ## License
 

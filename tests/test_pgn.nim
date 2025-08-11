@@ -18,6 +18,7 @@ suite "PGN Parser Tests":
       ("N3k2N/8/8/3N4/N4N1N/2R5/1R6/4K3 w - - 0 1", "h4g6", "Nh4g6"),
       ("8/2KN1p2/5p2/3N1B1k/5PNp/7P/7P/8 w - -", "d5f6", "N5xf6#"),
       ("8/8/8/R2nkn2/8/8/2K5/8 b - - 0 1", "f5e3", "Ne3+"),
+      ("8/8/8/3nkn1R/8/8/2K5/8 b - - 0 1", "d5e3", "Ne3+"),
       ("7k/1p2Npbp/8/2P5/1P1r4/3b2QP/3q1pPK/2RB4 b - - 1 29", "f2f1q", "f1=Q"),
       ("7k/1p2Npbp/8/2P5/1P1r4/3b2QP/3q1pPK/2RB4 b - - 1 29", "f2f1n", "f1=N+"),
       ("4r3/3k4/8/8/8/8/q5PP/1R1KR3 w Q - 2 2", "d1b1", "O-O-O+"),
