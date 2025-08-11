@@ -450,5 +450,8 @@ func notation*(
     result &= move.toFunc(currentPosition) & " "
     currentPosition = currentPosition.doMove(move)
 
+func doMove*(position: Position, moveString: string): Position =
+  position.doMove(moveString.toMove(position))
+
 const classicalStartPos* =
   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
