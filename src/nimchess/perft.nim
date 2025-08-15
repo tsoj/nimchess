@@ -31,7 +31,7 @@ func perft*(
   for move in moves[0 ..< numMoves]:
     let newPosition = position.doMove(move)
     if not newPosition.inCheck(position.us):
-      let nodes = newPosition.perft(depth - 1)
+      let nodes = newPosition.perft(depth - 1, usePseudoLegalTest = usePseudoLegalTest)
       when printRootMoveNodes:
         debugEcho "    ", move, " ", nodes, " ", newPosition.fen
       result += nodes
