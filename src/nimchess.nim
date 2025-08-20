@@ -1,5 +1,5 @@
-import nimchess/[bitboard, game, move, movegen, pgn, position, strchess, types]
-export bitboard, game, move, movegen, pgn, position, strchess, types
+import nimchess/[bitboard, engine, game, move, movegen, pgn, position, strchess, types]
+export bitboard, engine, game, move, movegen, pgn, position, strchess, types
 ## ========
 ## nimchess
 ## ========

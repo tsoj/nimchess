@@ -14,6 +14,27 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Stockfish
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$RUNNER_OS" in
+            Linux)
+              sudo apt-get update
+              sudo apt-get install -y stockfish
+              ;;
+            Windows)
+              choco install -y stockfish
+              ;;
+            macOS)
+              brew update
+              brew install stockfish
+              ;;
+          esac
+          echo "Stockfish location: $(command -v stockfish || true)"
+          stockfish --help || true
+
       - name: Setup Nimble
         uses: nim-lang/setup-nimble-action@2cecfd7eb446af54b289e24962ca9a5152e245f6 # v1
         with:

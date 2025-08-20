@@ -233,9 +233,8 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
   result.setZobristKeys
 
   if result[white, king].countSetBits != 1 or result[black, king].countSetBits != 1:
-    raise newException(
-      ValueError, "FEN is not correctly formatted: Need exactly one king for each color"
-    )
+    if not suppressWarnings:
+      echo "WARNING: FEN is not correctly formatted: Need exactly one king for each color"
 
 func toUCI*(move: Move, position: Position): string =
   if move.isCastling and not position.isChess960:
