@@ -198,7 +198,7 @@ suite "UCI Engine Unit Tests":
     check limit.nodes == 1000000
 
   test "Engine creation":
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     check not engine.initialized
     check engine.options.len == 0
     check engine.id.len == 0
@@ -209,14 +209,14 @@ suite "UCI Engine Integration Tests":
 
   template skipIfEngineNotFound(engineName: string) =
     try:
-      let engine = newUciEngine()
+      var engine = newUciEngine()
       engine.start(engineName)
       engine.quit()
     except:
       skip()
 
   test "Stockfish - Engine availability":
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
       check true # If we get here, engine started successfully
@@ -227,10 +227,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Engine initialization":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       check engine.initialized
       check engine.id.len > 0
@@ -246,10 +245,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Engine ready check":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       let ready = engine.isReady()
       check ready
@@ -265,10 +263,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Engine options parsing":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       check engine.options.len > 0
 
@@ -291,10 +288,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Setting engine options":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       # Try to set a common option (most engines have Hash)
       var optionName = ""
@@ -318,10 +314,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Position setup":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -348,10 +343,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Basic search (movetime)":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -373,10 +367,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Depth-limited search":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -398,10 +391,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Move validation":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -428,10 +420,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Info parsing during search":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -456,10 +447,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - New game command":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       engine.newGame()
 
@@ -483,7 +473,7 @@ suite "UCI Engine Integration Tests":
     skipIfEngineNotFound("stockfish")
 
     try:
-      let engine = startEngine("stockfish")
+      var engine = startEngine("stockfish")
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -499,10 +489,9 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Mate position detection":
     skipIfEngineNotFound("stockfish")
 
-    let engine = newUciEngine()
+    var engine = newUciEngine()
     try:
       engine.start("stockfish")
-      engine.initialize()
 
       # Simple mate in 1 position
       let matePos = "k7/7R/6R1/8/8/8/8/K7 w - - 0 1".toPosition
@@ -532,10 +521,9 @@ suite "UCI Engine Integration Tests":
     for engineName in engines:
       skipIfEngineNotFound(engineName)
 
-      let engine = newUciEngine()
+      var engine = newUciEngine()
       try:
         engine.start(engineName)
-        engine.initialize()
 
         check engine.initialized
         check engine.id.len > 0

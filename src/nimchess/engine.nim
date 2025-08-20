@@ -92,15 +92,33 @@ type
     multipv*: seq[UciInfo] ## Multiple PV lines
     stopped*: bool
     bestMove*: Option[Move]
-    engine: UciEngine
+    engine: ptr UciEngine
 
-  UciEngine* = ref object ## UCI chess engine communication handler
-    process: Process
+  UciEngine* = object ## UCI chess engine communication handler
+    process: Option[Process]
     options*: Table[string, EngineOption]
     id*: Table[string, string]
-    initialized*: bool
-    debug: bool
-    currentPosition: Position
+    initialized*: bool = false
+    debug: bool = false
+    currentPosition: Position = classicalStartPos
+
+proc `=copy`*(dest: var UciEngine, source: UciEngine) {.error.}
+
+proc `=wasMoved`*(engine: var UciEngine) =
+  ## Mark engine as moved - reset to safe state
+  engine.process = none(Process)
+  engine.initialized = false
+
+proc `=destroy`*(engine: var UciEngine) =
+  ## Destructor for UciEngine - ensures process is properly closed
+  if engine.process.isSome:
+    if engine.initialized:
+      try:
+        engine.process.get.inputStream.writeLine("quit")
+        engine.process.get.inputStream.flush()
+      except:
+        discard # Ignore errors during cleanup
+    engine.process.get.close()
 
 proc `<`*(a, b: Score): bool =
   if a.kind == skMateGiven:
@@ -130,16 +148,19 @@ proc `$`*(score: Score): string =
 
 # Engine communication
 
-proc sendCommand(engine: UciEngine, command: string) =
+proc sendCommand(engine: var UciEngine, command: string) =
   ## Send a command to the engine
   if engine.debug:
     echo ">> ", command
-  engine.process.inputStream.writeLine(command)
-  engine.process.inputStream.flush()
+  # assert engine.initialized
+  assert engine.process.isSome
+  assert not engine.process.get.inputStream.isNil
+  engine.process.get.inputStream.writeLine(command)
+  engine.process.get.inputStream.flush()
 
-proc readLine(engine: UciEngine): string =
+proc readLine(engine: var UciEngine): string =
   ## Read a line from the engine
-  result = engine.process.outputStream.readLine()
+  result = engine.process.get.outputStream.readLine()
   if engine.debug and result.len > 0:
     echo "<< ", result
   result = result.strip()
@@ -287,13 +308,14 @@ proc parseInfo*(line: string, position: Position): UciInfo =
 proc newUciEngine*(): UciEngine =
   ## Create a new UCI engine handler (without starting a process)
   result = UciEngine(
+    process: none(Process),
     options: initTable[string, EngineOption](),
     id: initTable[string, string](),
     initialized: false,
     debug: false,
   )
 
-proc initialize(engine: UciEngine) =
+proc initialize(engine: var UciEngine) =
   ## Initialize the UCI engine
   if engine.initialized:
     raise newException(EngineError, "Engine already initialized")
@@ -328,40 +350,69 @@ proc initialize(engine: UciEngine) =
     else:
       discard
 
-proc start*(engine: UciEngine, command: string, args: openArray[string] = []) =
+proc start*(engine: var UciEngine, command: string, args: openArray[string] = []) =
   ## Start the engine process
   var allArgs = @[command]
   allArgs.add(args)
 
-  engine.process = startProcess(
+  engine.process = some(startProcess(
     command = command, args = args, options = {poUsePath, poStdErrToStdOut}
-  )
+  ))
 
   engine.initialize
 
-proc setOption*(engine: UciEngine, name: string, value: string) =
+proc startEngine*(command: string, args: openArray[string] = []): UciEngine =
+  ## Convenience function to start and initialize an engine
+  result = newUciEngine()
+  result.start(command, args)
+
+proc stop*(engine: var UciEngine) =
+  ## Stop current search
+  engine.sendCommand("stop")
+
+proc quit*(engine: var UciEngine) =
+  ## Quit the engine
+  if engine.initialized:
+    engine.sendCommand("quit")
+
+  if engine.process.isSome:
+    engine.process.get.close()
+
+  # Mark as moved to prevent destructor from running cleanup again
+  wasMoved(engine)
+
+proc close*(engine: var UciEngine) =
+  ## Close the engine process
+  engine.quit()
+
+proc setOption*(engine: var UciEngine, name: string, value: string) =
+  echo "hiiii2.5"
   ## Set an engine option
   if not engine.initialized:
+    echo "hiiii2.55"
+    # engine.quit()
     raise newException(EngineError, "Engine not initialized")
+  echo "hiiii2.6"
 
   let cmd = "setoption name " & name & " value " & value
   engine.sendCommand(cmd)
+  echo "hiiii2.7"
 
-proc isReady*(engine: UciEngine): bool =
+proc isReady*(engine: var UciEngine): bool =
   ## Check if engine is ready
   engine.sendCommand("isready")
 
   let line = engine.readLine()
   return line == "readyok"
 
-proc newGame*(engine: UciEngine) =
+proc newGame*(engine: var UciEngine) =
   ## Signal a new game to the engine
   if not engine.initialized:
     raise newException(EngineError, "Engine not initialized")
 
   engine.sendCommand("ucinewgame")
 
-proc setPosition*(engine: UciEngine, position: Position, moves: seq[Move] = @[]) =
+proc setPosition*(engine: var UciEngine, position: Position, moves: seq[Move] = @[]) =
   ## Set the current position
   engine.currentPosition = position
 
@@ -381,7 +432,7 @@ proc setPosition*(engine: UciEngine, position: Position, moves: seq[Move] = @[])
 
   engine.sendCommand(cmd)
 
-proc go*(engine: UciEngine, limit: Limit): PlayResult =
+proc go*(engine: var UciEngine, limit: Limit): PlayResult =
   ## Ask engine to search and return best move
   var cmd = "go"
 
@@ -442,26 +493,10 @@ proc go*(engine: UciEngine, limit: Limit): PlayResult =
     else:
       discard
 
-proc stop*(engine: UciEngine) =
-  ## Stop current search
-  engine.sendCommand("stop")
-
-proc quit*(engine: UciEngine) =
-  ## Quit the engine
-  if engine.initialized:
-    engine.sendCommand("quit")
-
-  if not engine.process.isNil:
-    engine.process.close()
-
-proc close*(engine: UciEngine) =
-  ## Close the engine process
-  engine.quit()
-
 # High-level convenience functions
 
 proc play*(
-    engine: UciEngine, position: Position, limit: Limit, moves: seq[Move] = @[]
+    engine: var UciEngine, position: Position, limit: Limit, moves: seq[Move] = @[]
 ): PlayResult =
   ## High-level function to get best move for a position
   if not engine.initialized:
@@ -471,40 +506,41 @@ proc play*(
   engine.setPosition(position, moves)
   result = engine.go(limit)
 
-proc startEngine*(command: string, args: openArray[string] = []): UciEngine =
-  ## Convenience function to start and initialize an engine
-  result = newUciEngine()
-  result.start(command, args)
-  result.initialize()
-
 # Example usage functions (commented out for library)
 when isMainModule:
   proc example() =
     ## Example of how to use the engine
-    try:
-      let engine = startEngine("stockfish")
 
-      # Set some options
-      engine.setOption("Threads", "4")
-      engine.setOption("Hash", "128")
+    var engine1 = startEngine("stockfish")
+    echo "hiiii"
+    echo engine1
+    # ass
+    var engine = ensureMove engine1
+    echo engine
+    # echo cast[uint](addr engine.process[])
+    # echo engine2
+    # echo cast[uint](addr engine2.process[])
+    # engine2.quit()
+    echo "hiiii2"
 
-      # Create a starting position
-      let position =
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-      let limit = Limit(movetimeSeconds: 5.0)
+    # Set some options
+    engine.setOption("Threads", "4")
+    engine.setOption("Hash", "128")
 
-      # Get best move
-      let result = engine.play(position, limit)
+    # Create a starting position
+    let position =
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let limit = Limit(movetimeSeconds: 5.0)
 
-      if result.move.isSome:
-        echo "Best move: ", result.move.get()
+    # Get best move
+    let result = engine.play(position, limit)
+    echo "hiiii3"
 
-      echo result.info
+    if result.move.isSome:
+      echo "Best move: ", result.move.get()
 
-      engine.quit()
-    except EngineError as e:
-      echo "Engine error: ", e.msg
-    except Exception as e:
-      echo "Error: ", e.msg
+    echo result.info
+
+    engine.quit()
 
   example()
