@@ -148,7 +148,10 @@ func generateCastlingMoves(position: Position, moves: var openArray[Move]): int 
   let
     us = position.us
     occupancy = position.occupancy
-    kingSource = (position[us] and position[king]).toSquare
+    kingSource = position.kingSquare(us)
+
+  if kingSource == noSquare:
+    return
 
   result = 0
   for (castlingSide, rookSource) in position.rookSource[us].pairs:

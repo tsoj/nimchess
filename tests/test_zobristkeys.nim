@@ -7,8 +7,8 @@ suite "Zobrist Key Tests":
     for fen1 in someFens:
       for fen2 in someFens:
         var
-          p1 = fen1.toPosition
-          p2 = fen2.toPosition
+          p1 = fen1.toPosition(suppressWarnings = true)
+          p2 = fen2.toPosition(suppressWarnings = true)
 
         # Normalize halfmove counters to isolate position-based differences
         p1.halfmoveClock = p2.halfmoveClock
@@ -20,8 +20,8 @@ suite "Zobrist Key Tests":
     for fen1 in someFens:
       for fen2 in someFens:
         var
-          p1 = fen1.toPosition
-          p2 = fen2.toPosition
+          p1 = fen1.toPosition(suppressWarnings = true)
+          p2 = fen2.toPosition(suppressWarnings = true)
 
         # Normalize halfmove counters
         p1.halfmoveClock = p2.halfmoveClock
@@ -35,7 +35,7 @@ suite "Zobrist Key Tests":
 
   test "Zobrist key calculation correctness":
     for fen in someFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
       check position.zobristKeysAreOk
 
   test "Key changes with position changes":
@@ -69,7 +69,7 @@ suite "Zobrist Key Tests":
     var seenKeys: seq[ZobristKey] = @[]
 
     for fen in classicalFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
       let key = position.zobristKey
 
       check key notin seenKeys

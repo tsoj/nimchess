@@ -182,19 +182,18 @@ func isPseudoLegal*(position: Position, move: Move): bool =
     return false
 
   # check that moved is okay
-  if empty(source.toBitboard and position[us] and position[moved]):
+  if not position[us, moved].isSet(source):
     return false
 
   # check that target is okay, but handle castle case extra
-  if not empty(target.toBitboard and position[us]) and not move.isCastling:
+  if position[us].isSet(target) and not move.isCastling:
     return false
 
   # check that captured is okay, but handle en passant case extra
-  if captured != noPiece and
-      empty(target.toBitboard and position[enemy] and position[captured]) and
+  if captured != noPiece and not position[enemy, captured].isSet(target) and
       not capturedEnPassant:
     return false
-  if captured == noPiece and not empty(target.toBitboard and position[enemy]):
+  if captured == noPiece and position[enemy].isSet(target):
     return false
 
   # handle the captured en passant case

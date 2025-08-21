@@ -8,7 +8,7 @@ const maxNumPerftNodes {.intdefine.} = int.high
 
 proc testPerft(usePseudoLegalTest: static bool, maxNodes: int) =
   for (fen, trueNumNodesList) in perftFens:
-    let position = fen.toPosition
+    let position = fen.toPosition(suppressWarnings = true)
 
     for depth in 1 .. trueNumNodesList.len:
       let trueNumNodes = trueNumNodesList[depth - 1]
@@ -39,7 +39,7 @@ suite "Perft Tests":
     let start = cpuTime()
 
     for (fen, numNodeList) in perftFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
       var depth = 0
       while depth + 1 < numNodeList.len and numNodeList[depth] <= maxNumPerftNodes:
         depth += 1

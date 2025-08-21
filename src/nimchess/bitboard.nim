@@ -166,9 +166,10 @@ const
 
 const attackTablePawnQuiet: array[white .. black, array[a1 .. h8, Bitboard]] = block:
   var attackTablePawnQuiet: array[white .. black, array[a1 .. h8, Bitboard]]
-  for square in a2 .. h7:
-    attackTablePawnQuiet[white][square] = square.toBitboard shl 8
-    attackTablePawnQuiet[black][square] = square.toBitboard shr 8
+
+  for (color, range) in [(white, a1 .. h7), (black, a2 .. h8)]:
+    for square in range:
+      attackTablePawnQuiet[color][square] = square.toBitboard.up(color)
   attackTablePawnQuiet
 
 const attackTablePawnCapture: array[white .. black, array[a1 .. h8, Bitboard]] = block:

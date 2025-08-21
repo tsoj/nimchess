@@ -124,11 +124,14 @@ func isAttacked*(position: Position, us: Color, target: Square): bool =
   not empty position.attackers(us.opposite, target)
 
 func kingSquare*(position: Position, color: Color): Square =
-  assert (position[king] and position[color]).countSetBits == 1
   (position[king] and position[color]).toSquare
 
 func inCheck*(position: Position, us: Color): bool =
-  position.isAttacked(us, position.kingSquare(us))
+  let kingSquare = position.kingSquare(us)
+  if kingSquare == noSquare:
+    false
+  else:
+    position.isAttacked(us, kingSquare)
 
 func calculateZobristKeys*(
     position: Position

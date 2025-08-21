@@ -46,6 +46,7 @@ func fen*(position: Position, alwaysShowEnPassantSquare: bool = false): string =
   result &= " "
 
   var enPassantStr = "-"
+  # debugEcho result
   for move in position.legalMoves:
     if move.isEnPassantCapture:
       assert move.target == position.enPassantTarget
@@ -161,7 +162,11 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
 
     let
       us = if castlingChar.isUpperAscii: white else: black
-      kingSquare = (result[us] and result[king]).toSquare
+      kingSquare = result.kingSquare(us)
+
+    if kingSquare == noSquare:
+      echo fmt"WARNING: Castling notation exists for {us} despite no available king"
+      continue
 
     let rookSource =
       case castlingChar

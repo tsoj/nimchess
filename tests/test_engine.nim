@@ -1,5 +1,5 @@
 import unittest, options, tables, times, strformat, strutils
-import nimchess/[engine, movegen, position, strchess, move, types]
+import nimchess/[engine, movegen, position, strchess, move, types, game]
 
 suite "UCI Engine Unit Tests":
   test "Option parsing - spin type":
@@ -154,6 +154,160 @@ suite "UCI Engine Unit Tests":
     let info = parseInfo("string goes to end no matter score cp 4 what", pos)
     # Implementation specific - depends on how string parsing is handled
 
+  test "Info parsing - sbhits":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("sbhits 12345", pos)
+
+    check info.sbhits.isSome
+    check info.sbhits.get == 12345
+
+  test "Info parsing - cpuload":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("cpuload 750", pos)
+
+    check info.cpuload.isSome
+    check info.cpuload.get == 750
+
+  test "Info parsing - refutation":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("refutation d2d4 d7d5 c2c4", pos)
+
+    check info.refutation.isSome
+    check info.refutation.get.len >= 1
+    # Should contain at least the first move d2d4
+
+  test "Info parsing - currline with CPU number":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("currline 1 e2e4 e7e5 g1f3", pos)
+
+    check info.currline.isSome
+    let (cpuNum, moves) = info.currline.get
+    check cpuNum == 1
+    check moves.len >= 1
+
+  test "Info parsing - currline with invalid CPU number":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("currline invalid e2e4", pos)
+
+    check info.currline.isNone
+
+  test "Info parsing - multiple new fields":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("depth 5 sbhits 100 cpuload 500 tbhits 50", pos)
+
+    check info.depth.isSome
+    check info.depth.get == 5
+    check info.sbhits.isSome
+    check info.sbhits.get == 100
+    check info.cpuload.isSome
+    check info.cpuload.get == 500
+    check info.tbhits.isSome
+    check info.tbhits.get == 50
+
+  test "Info parsing - refutation with invalid moves":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("refutation e2e4 invalid_move e7e5", pos)
+
+    check info.refutation.isSome
+    # Should parse e2e4 but stop at invalid_move
+    check info.refutation.get.len == 1
+
+  test "Info parsing - currline with invalid moves":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("currline 2 e2e4 invalid_move e7e5", pos)
+
+    check info.currline.isSome
+    let (cpuNum, moves) = info.currline.get
+    check cpuNum == 2
+    # Should parse e2e4 but stop at invalid_move
+    check moves.len == 1
+
+  test "Info parsing - robust unknown field handling":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info =
+      parseInfo("depth 3 unknownfield 123 nodes 1000 randomstuff abc sbhits 456", pos)
+
+    # Known fields should be parsed correctly
+    check info.depth.isSome
+    check info.depth.get == 3
+    check info.nodes.isSome
+    check info.nodes.get == 1000
+    check info.sbhits.isSome
+    check info.sbhits.get == 456
+
+    # Unknown fields should be ignored without causing errors
+
+  test "Info parsing - malformed numeric fields":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("depth abc nodes xyz sbhits 789 cpuload def", pos)
+
+    # Invalid numeric values should be ignored
+    check info.depth.isNone
+    check info.nodes.isNone
+    check info.cpuload.isNone
+
+    # Valid numeric value should still be parsed
+    check info.sbhits.isSome
+    check info.sbhits.get == 789
+
+  test "Info parsing - empty refutation":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("refutation", pos)
+
+    # Should handle empty refutation gracefully
+    check info.refutation.isSome
+    check info.refutation.get.len == 0
+
+  test "Info parsing - empty currline":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("currline 3", pos)
+
+    # Should handle currline with CPU number but no moves
+    check info.currline.isSome
+    let (cpuNum, moves) = info.currline.get
+    check cpuNum == 3
+    check moves.len == 0
+
+  test "Info parsing - mixed valid and invalid moves in pv":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("pv e2e4 e7e5 invalid_notation g1f3", pos)
+
+    # Should parse valid moves until hitting invalid one
+    check info.pv.isSome
+    check info.pv.get.len == 2 # e2e4 and e7e5, then stops at invalid_notation
+
+  test "Info parsing - currline without moves after CPU number":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo("currline 1 depth 5", pos)
+
+    # Should parse CPU number but no moves (depth 5 is not a valid move)
+    check info.currline.isSome
+    let (cpuNum, moves) = info.currline.get
+    check cpuNum == 1
+    check moves.len == 0
+
+  test "Info parsing - comprehensive mixed field test":
+    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let info = parseInfo(
+      "   depth 8 pv e2e4 e7e5 score cp 25 sbhits 100 refutation d2d4 d7d5 currline 2 g1f3 b8c6 unknown_field test cpuload 600",
+      pos,
+    )
+
+    # All valid fields should be parsed
+    check info.depth.isSome
+    check info.depth.get == 8
+    check info.pv.isSome
+    check info.pv.get.len >= 2
+    check info.score.isSome
+    check info.score.get.cp == 25
+    check info.sbhits.isSome
+    check info.sbhits.get == 100
+    check info.refutation.isSome
+    check info.refutation.get.len >= 2
+    check info.currline.isSome
+    check info.cpuload.isSome
+    check info.cpuload.get == 600
+
   test "Score display":
     let cpScore = Score(kind: skCp, cp: 150)
     check $cpScore == "cp 150"
@@ -198,10 +352,47 @@ suite "UCI Engine Unit Tests":
     check limit.nodes == 1000000
 
   test "Engine creation":
-    var engine = newUciEngine()
-    check not engine.initialized
-    check engine.options.len == 0
-    check engine.id.len == 0
+    var engine = newUciEngine("stockfish")
+    check engine.initialized
+
+  test "setPosition updates engine game state correctly":
+    var engine = newUciEngine("stockfish")
+
+    # Test setting starting position
+    let startPos = classicalStartPos
+    engine.setPosition(startPos)
+    check engine.game.currentPosition() == startPos
+    check engine.game.moves.len == 0
+    check engine.game.startPosition == startPos
+
+    # Test setting position with moves
+    let moves =
+      @[
+        "e2e4".toMove(startPos), "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos)))
+      ]
+    engine.setPosition(startPos, moves)
+    check engine.game.moves.len == 2
+    check engine.game.moves[0] == moves[0]
+    check engine.game.moves[1] == moves[1]
+
+    # Verify the current position matches what we expect after the moves
+    let expectedPos = startPos.doMove(moves[0]).doMove(moves[1])
+    check engine.game.currentPosition() == expectedPos
+
+    # Test setting a different starting position
+    let customFen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+    let customPos = customFen.toPosition()
+    engine.setPosition(customPos)
+    check engine.game.currentPosition() == customPos
+    check engine.game.startPosition == customPos
+    check engine.game.moves.len == 0
+
+    # Test setting custom position with additional moves
+    let additionalMove = "g1f3".toMove(customPos)
+    engine.setPosition(customPos, @[additionalMove])
+    check engine.game.moves.len == 1
+    check engine.game.moves[0] == additionalMove
+    check engine.game.currentPosition() == customPos.doMove(additionalMove)
 
 suite "UCI Engine Integration Tests":
   # These tests require an actual UCI engine to be available
@@ -209,14 +400,13 @@ suite "UCI Engine Integration Tests":
 
   template skipIfEngineNotFound(engineName: string) =
     try:
-      var engine = newUciEngine()
-      engine.start(engineName)
+      var engine = newUciEngine(engineName)
       engine.quit()
     except:
       skip()
 
   test "Stockfish - Engine availability":
-    var engine = newUciEngine()
+    var engine: UciEngine
     try:
       engine.start("stockfish")
       check true # If we get here, engine started successfully
@@ -227,10 +417,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Engine initialization":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       check engine.initialized
       check engine.id.len > 0
 
@@ -245,10 +433,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Engine ready check":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       let ready = engine.isReady()
       check ready
 
@@ -263,10 +449,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Engine options parsing":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       check engine.options.len > 0
 
       # Most UCI engines should have a Hash option
@@ -288,10 +472,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Setting engine options":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       # Try to set a common option (most engines have Hash)
       var optionName = ""
       for name, opt in engine.options.pairs:
@@ -314,10 +496,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Position setup":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
       engine.setPosition(startPos)
@@ -343,10 +523,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Basic search (movetime)":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
       engine.setPosition(startPos)
@@ -367,10 +545,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Depth-limited search":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
       engine.setPosition(startPos)
@@ -391,10 +567,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Move validation":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
       engine.setPosition(startPos)
@@ -420,10 +594,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Info parsing during search":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
       engine.setPosition(startPos)
@@ -447,10 +619,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - New game command":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       engine.newGame()
 
       let startPos =
@@ -473,7 +643,7 @@ suite "UCI Engine Integration Tests":
     skipIfEngineNotFound("stockfish")
 
     try:
-      var engine = startEngine("stockfish")
+      var engine = newUciEngine("stockfish")
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -489,10 +659,8 @@ suite "UCI Engine Integration Tests":
   test "Stockfish - Mate position detection":
     skipIfEngineNotFound("stockfish")
 
-    var engine = newUciEngine()
+    var engine = newUciEngine("stockfish")
     try:
-      engine.start("stockfish")
-
       # Simple mate in 1 position
       let matePos = "k7/7R/6R1/8/8/8/8/K7 w - - 0 1".toPosition
       engine.setPosition(matePos)
@@ -521,10 +689,8 @@ suite "UCI Engine Integration Tests":
     for engineName in engines:
       skipIfEngineNotFound(engineName)
 
-      var engine = newUciEngine()
+      var engine = newUciEngine(engineName)
       try:
-        engine.start(engineName)
-
         check engine.initialized
         check engine.id.len > 0
 

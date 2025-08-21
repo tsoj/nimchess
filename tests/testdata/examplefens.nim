@@ -6,7 +6,6 @@ const classicalFens* = [
   "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
-  "QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1",
   "rn3rk1/1bqp1ppp/5b2/1Bp5/P4P2/1QN1P3/1P1B3P/R3K1R1 w Q - 100000 1000000",
   # fens from stormphrax, taken from alexandria, ultimately from bitgenie
   "r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq a6 0 14",
@@ -59,6 +58,15 @@ const classicalFens* = [
   "2rr2k1/1p4bp/p1q1p1p1/4Pp1n/2PB4/1PN3P1/P3Q2P/2RR2K1 w - f6 0 20",
   "3br1k1/p1pn3p/1p3n2/5pNq/2P1p3/1PN3PP/P2Q1PB1/4R1K1 w - - 0 23",
   "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
+  # FENs with wrong number of kings and other weirdness
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1BNR w kq - 0 1",
+  "rnbq1bnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1BNR w - - 0 1",
+  "rnbq1bnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ - 0 1",
+  "8/8/8/8/8/8/8/8 w - - 0 1",
+  "8/8/8/8/8/8/8/2KK4 w - - 0 1",
+  "4K3/8/8/2k5/5k2/8/8/2K5 w - - 0 1",
+  "2ppKPP1/8/8/2k1k3/5k2/3K4/8/P1K1ppP1 w - - 0 1",
+  "QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1",
 ]
 
 const chess960Fens* = [
@@ -87,7 +95,6 @@ const perftFens* = [
   ("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", @[46, 2079, 89890, 3894594, 164075551]),
   ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w QKqk -", @[20, 400, 8902, 197281, 4865609, 119060324]),
   ("4k3/8/8/8/8/8/8/4K2R w K - 0 1", @[15, 66, 1197, 7059, 133987, 764643]),
-  ("QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1", @[265]),
   # Chess960 positions
   ("n1nqkr1b/p1pp3p/4p1r1/1p1b1p2/P4Pp1/RN1NP3/1PPPQ1PP/1R2K1BB w Qk - 0 9", @[33, 1410, 46550, 1952361, 66020611, 2726961144]),
   ("nrnqkrbb/pppp1ppp/4p3/8/6P1/1N6/PPPPPP1P/1RNQKRBB b Kqk - 1 2", @[24, 596, 15380, 400811, 10974791, 297838985]),
@@ -95,5 +102,15 @@ const perftFens* = [
   ("b1rkrbnq/1pp1pppp/2np4/p5N1/8/1P2P3/P1PP1PPP/BNRKRB1Q w CEce - 0 9", @[37, 740, 27073, 581744, 21156664, 485803600]),
   ("nrknbrqb/3p1ppp/ppN1p3/8/6P1/8/PPPPPP1P/1RKNBRQB w BFbf - 0 9", @[32, 526, 17267, 319836, 10755190, 220058991]),
   ("bbqrnnkr/1ppp1p1p/5p2/p5p1/P7/1P4P1/2PPPP1P/1BQRNNKR w DKdk - 0 9", @[20, 322, 7224, 145818, 3588435, 82754650]),
+  # FENs with wrong number of kings and other weirdness (not 100% sure if these perft numbers are correct)
+  ("QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1", @[265, 0]),
+  ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1BNR w kq - 0 1", @[21, 420, 9622, 213302, 5336257, 130863947]),
+  ("rnbq1bnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1BNR w - - 0 1", @[21, 441, 10103, 231054, 5786361, 144482249]),
+  ("rnbq1bnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQ - 0 1", @[20, 420, 9347, 213737, 5279231, 131641516]),
+  ("8/8/8/8/8/8/8/8 w - - 0 1", @[0, 0]),
+  ("8/8/8/8/8/8/8/2KK4 w - - 0 1", @[8, 0]),
+  ("4K3/8/8/2k5/5k2/8/8/2K5 w - - 0 1", @[10, 159, 1834, 28370, 337694, 4967636]),
+  ("2ppKPP1/8/8/2k1k3/5k2/3K4/8/P1K1ppP1 w - - 0 1", @[19, 338, 6522, 127582, 2500287, 50116123]),
+  ("QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1", @[265, 0, 0, 0, 0, 0]),
 ]
 #!fmt: on

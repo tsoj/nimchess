@@ -8,7 +8,7 @@ suite "Position Transform Tests":
 
   test "Identity transforms":
     for fen in someFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
 
       # Test double rotation (180 degrees twice = identity)
       let doubleRotated = position.rotate.rotate
@@ -22,7 +22,7 @@ suite "Position Transform Tests":
 
   test "Complex transform combinations":
     for fen in someFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
 
       # Test rotate + mirror combinations that should return to original
       let transformed1 = position.rotate.mirrorVertically.rotate.mirrorVertically
@@ -36,7 +36,7 @@ suite "Position Transform Tests":
 
   test "Single transforms produce valid positions":
     for fen in someFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
 
       # Test vertical mirror
       let vertMirrored = position.mirrorVertically
@@ -47,23 +47,23 @@ suite "Position Transform Tests":
 
       # assert false
 
-      check vertMirroredFen.toPosition == vertMirrored
+      check vertMirroredFen.toPosition(suppressWarnings = true) == vertMirrored
 
-      assert vertMirroredFen.toPosition == vertMirrored
+      assert vertMirroredFen.toPosition(suppressWarnings = true) == vertMirrored
 
       # Test horizontal mirror
       let horizMirrored = position.mirrorHorizontally
       let horizMirroredFen = horizMirrored.fen(alwaysShowEnPassantSquare = true)
-      check horizMirroredFen.toPosition == horizMirrored
+      check horizMirroredFen.toPosition(suppressWarnings = true) == horizMirrored
 
       # Test rotation
       let rotated = position.rotate
       let rotatedFen = rotated.fen(alwaysShowEnPassantSquare = true)
-      check rotatedFen.toPosition == rotated
+      check rotatedFen.toPosition(suppressWarnings = true) == rotated
 
   test "Transform properties":
     for fen in someFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
 
       # Test that horizontal mirror is its own inverse
       check position == position.mirrorHorizontally.mirrorHorizontally
@@ -73,7 +73,7 @@ suite "Position Transform Tests":
 
   test "Zobrist keys after transforms":
     for fen in someFens:
-      let position = fen.toPosition
+      let position = fen.toPosition(suppressWarnings = true)
 
       # Verify that transforms with key calculation maintain key consistency
       let vertMirrored = position.mirrorVertically(skipKeyCalculation = false)

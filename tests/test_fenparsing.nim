@@ -7,7 +7,7 @@ suite "FEN Parsing Tests":
   test "FEN parsing and regeneration":
     for fen in someFens:
       let
-        position = fen.toPosition
+        position = fen.toPosition(suppressWarnings = true)
         fenTestLen =
           if position.isChess960:
             fen.splitWhitespace()[0].len
@@ -26,7 +26,7 @@ suite "FEN Parsing Tests":
 
   test "Chess960 detection":
     for fen in classicalFens:
-      check not fen.toPosition.isChess960
+      check not fen.toPosition(suppressWarnings = true).isChess960
 
     for fen in chess960Fens:
       check fen.toPosition.isChess960
