@@ -95,7 +95,7 @@ type
     engine: ptr UciEngine
 
   UciEngine* = object ## UCI chess engine communication handler
-    process: Option[Process]
+    process: Process
     options*: Table[string, EngineOption]
     id*: Table[string, string]
     initialized*: bool = false
@@ -104,21 +104,21 @@ type
 
 proc `=copy`*(dest: var UciEngine, source: UciEngine) {.error.}
 
-proc `=wasMoved`*(engine: var UciEngine) =
+proc `=wasMoved`*(engine: var UciEngine) {.nodestroy.} =
   ## Mark engine as moved - reset to safe state
-  engine.process = none(Process)
+  engine.process = nil
   engine.initialized = false
 
 proc `=destroy`*(engine: var UciEngine) =
   ## Destructor for UciEngine - ensures process is properly closed
-  if engine.process.isSome:
+  if engine.process != nil:
     if engine.initialized:
       try:
-        engine.process.get.inputStream.writeLine("quit")
-        engine.process.get.inputStream.flush()
+        engine.process.inputStream.writeLine("quit")
+        engine.process.inputStream.flush()
       except:
         discard # Ignore errors during cleanup
-    engine.process.get.close()
+    engine.process.close()
 
 proc `<`*(a, b: Score): bool =
   if a.kind == skMateGiven:
@@ -153,14 +153,14 @@ proc sendCommand(engine: var UciEngine, command: string) =
   if engine.debug:
     echo ">> ", command
   # assert engine.initialized
-  assert engine.process.isSome
-  assert not engine.process.get.inputStream.isNil
-  engine.process.get.inputStream.writeLine(command)
-  engine.process.get.inputStream.flush()
+  assert engine.process != nil
+  assert not engine.process.inputStream.isNil
+  engine.process.inputStream.writeLine(command)
+  engine.process.inputStream.flush()
 
 proc readLine(engine: var UciEngine): string =
   ## Read a line from the engine
-  result = engine.process.get.outputStream.readLine()
+  result = engine.process.outputStream.readLine()
   if engine.debug and result.len > 0:
     echo "<< ", result
   result = result.strip()
@@ -308,7 +308,7 @@ proc parseInfo*(line: string, position: Position): UciInfo =
 proc newUciEngine*(): UciEngine =
   ## Create a new UCI engine handler (without starting a process)
   result = UciEngine(
-    process: none(Process),
+    process: nil,
     options: initTable[string, EngineOption](),
     id: initTable[string, string](),
     initialized: false,
@@ -355,9 +355,9 @@ proc start*(engine: var UciEngine, command: string, args: openArray[string] = []
   var allArgs = @[command]
   allArgs.add(args)
 
-  engine.process = some(startProcess(
+  engine.process = startProcess(
     command = command, args = args, options = {poUsePath, poStdErrToStdOut}
-  ))
+  )
 
   engine.initialize
 
@@ -375,8 +375,8 @@ proc quit*(engine: var UciEngine) =
   if engine.initialized:
     engine.sendCommand("quit")
 
-  if engine.process.isSome:
-    engine.process.get.close()
+  if engine.process != nil:
+    engine.process.close()
 
   # Mark as moved to prevent destructor from running cleanup again
   wasMoved(engine)
@@ -528,8 +528,7 @@ when isMainModule:
     engine.setOption("Hash", "128")
 
     # Create a starting position
-    let position =
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+    let position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
     let limit = Limit(movetimeSeconds: 5.0)
 
     # Get best move
