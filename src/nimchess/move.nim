@@ -88,6 +88,9 @@ func moveType(move: Move): MoveType =
 func isNoMove*(move: Move): bool =
   move.moveType == notSomeMove
 
+static:
+  assert Move.default.isNoMove
+
 func source*(move: Move): Square =
   Square(move.uint16 and 0b111111u16)
 

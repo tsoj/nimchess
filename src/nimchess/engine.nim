@@ -54,29 +54,20 @@ type
   UciInfo* = object ## Information from UCI engine during search
     depth*: Option[int] ## Search depth in plies
     seldepth*: Option[int] ## Selective search depth
-    time*: Option[float] ## Time searched in seconds
+    timeSeconds*: Option[float] ## Time searched in seconds
     nodes*: Option[int] ## Nodes searched
     nps*: Option[int] ## Nodes per second
     score*: Option[Score] ## Current evaluation
     pv*: Option[seq[Move]] ## Principal variation (empty if none)
     multipv*: Option[int] ## Multi-PV line number
     string*: Option[string] ## Arbitrary string from engine
-    currmove*: Option[Move] ## Currently searching move
-    currmovenumber*: Option[int] ## Move number being searched
     hashfull*: Option[int] ## Hash table fill level (permille)
     tbhits*: Option[int] ## Tablebase hits
-    sbhits*: Option[int] ## Shredder endgame database hits
-    cpuload*: Option[int] ## CPU usage in permille
-    refutation*: Option[seq[Move]] ## Refutation line for a move
-    currline*: Option[(int, seq[Move])]
-      ## Current line being calculated (CPU number, moves)
 
   PlayResult* = object ## Result from asking engine to play a move
-    move*: Option[Move] ## Best move found
+    move*: Move = noMove ## Best move found
     ponder*: Option[Move] ## Expected opponent response
-    info*: UciInfo ## Additional search information
-    drawOffered*: bool ## Whether engine offered a draw
-    resigned*: bool ## Whether engine resigned
+    pvs*: Table[int, UciInfo] ## All principal variations and search info
 
   UciEngine* = object ## UCI chess engine communication handler
     process: Process = nil
@@ -174,6 +165,11 @@ func `$`*(score: Score): string =
   of skMateGiven:
     "mate 0"
 
+func info*(playResult: PlayResult): UciInfo =
+  ## Gets the UCI info of the main PV line.
+  ## An alias for `playResult.pvs.getOrDefault(1)`, i.e. accessing the first multipv line.
+  playResult.pvs.getOrDefault(1)
+
 func parseEngineOption*(line: string): EngineOption =
   ## Parse a UCI option line
   # Format: option name <name> type <type> [default <value>] [min <value>] [max <value>] [var <choice>]*
@@ -228,7 +224,7 @@ func parseEngineOption*(line: string): EngineOption =
     raise newException(ValueError, "Unknown option type: " & optionType)
 
 func parseInfo*(line: string, position: Position): UciInfo =
-  ## Parse a UCI info line
+  ## Parse a UCI info line and returns a new UciInfo object.
   let parts = line.splitWhitespace()
   var i = 0
 
@@ -240,59 +236,29 @@ func parseInfo*(line: string, position: Position): UciInfo =
       except ValueError:
         discard
 
-  func parseFloatField(field: var Option[float], divisor: float = 1.0) =
-    i += 1
-    if i < parts.len:
-      try:
-        field = some(parseInt(parts[i]).float / divisor)
-      except ValueError:
-        discard
-
-  func parseMoveSequence(moves: var Option[seq[Move]], pos: Position) =
-    i += 1
-    moves = some newSeq[Move]()
-    var tempPos = pos
-    while i < parts.len:
-      try:
-        let move = parts[i].toMove(tempPos)
-        moves.get.add(move)
-        tempPos = tempPos.doMove(move)
-        i += 1
-      except ValueError:
-        break
-
-  func parseMoveSequenceFromCurrent(moves: var Option[seq[Move]], pos: Position) =
-    moves = some newSeq[Move]()
-    var tempPos = pos
-    while i < parts.len:
-      try:
-        let move = parts[i].toMove(tempPos)
-        moves.get.add(move)
-        tempPos = tempPos.doMove(move)
-        i += 1
-      except ValueError:
-        break
-
-  func parseMove(moveField: var Option[Move], pos: Position) =
-    i += 1
-    if i < parts.len:
-      try:
-        moveField = some(parts[i].toMove(pos))
-      except ValueError:
-        discard
-
   while i < parts.len:
     case parts[i]
     of "depth":
       parseIntField(result.depth)
     of "seldepth":
       parseIntField(result.seldepth)
-    of "time":
-      parseFloatField(result.time, 1000.0)
     of "nodes":
       parseIntField(result.nodes)
     of "nps":
       parseIntField(result.nps)
+    of "multipv":
+      parseIntField(result.multipv)
+    of "hashfull":
+      parseIntField(result.hashfull)
+    of "tbhits":
+      parseIntField(result.tbhits)
+    of "time":
+      i += 1
+      if i < parts.len:
+        try:
+          result.timeSeconds = some(parseInt(parts[i]).float / 1000.0)
+        except ValueError:
+          discard
     of "score":
       i += 1
       if i + 1 < parts.len:
@@ -314,43 +280,25 @@ func parseInfo*(line: string, position: Position): UciInfo =
           except ValueError:
             discard
     of "pv":
-      parseMoveSequence(result.pv, position)
-      continue
-    of "multipv":
-      parseIntField(result.multipv)
-    of "currmove":
-      parseMove(result.currmove, position)
-    of "currmovenumber":
-      parseIntField(result.currmovenumber)
-    of "hashfull":
-      parseIntField(result.hashfull)
-    of "tbhits":
-      parseIntField(result.tbhits)
-    of "sbhits":
-      parseIntField(result.sbhits)
-    of "cpuload":
-      parseIntField(result.cpuload)
-    of "refutation":
-      parseMoveSequence(result.refutation, position)
-      continue
-    of "currline":
       i += 1
-      if i < parts.len:
+      result.pv = some newSeq[Move]()
+      var tempPos = position
+      while i < parts.len:
         try:
-          let cpuNum = parseInt(parts[i])
+          let move = parts[i].toMove(tempPos)
+          result.pv.get.add(move)
+          tempPos = tempPos.doMove(move)
           i += 1
-          var moves: Option[seq[Move]]
-          parseMoveSequenceFromCurrent(moves, position)
-          if moves.isSome:
-            result.currline = some((cpuNum, moves.get))
         except ValueError:
-          discard
+          break
       continue
     of "string":
       i += 1
       if i < parts.len:
         result.string = some(parts[i ..^ 1].join(" "))
-      break
+      break # String is always the last part of an info line
+    else:
+      discard # Ignore unknown info tokens
     i += 1
 
 proc setPosition*(engine: var UciEngine, game: Game) =
@@ -521,30 +469,46 @@ proc go*(engine: var UciEngine, limit: Limit): PlayResult =
     case parts[0]
     of "info":
       if parts.len > 1:
-        let info = parseInfo(parts[1], engine.game.currentPosition())
-        for infoOpt, resultOpt in fields(info, result.info):
-          if infoOpt.isSome:
-            resultOpt = infoOpt
+        # 1. Parse the info line into a temporary object
+        let newInfo = parseInfo(parts[1], engine.game.currentPosition())
+
+        # 2. Determine the multipv key (defaults to 1)
+        let multipvNumber = newInfo.multipv.get(otherwise = 1)
+
+        # 3. Merge new info into the existing table entry
+        var currentPvInfo = result.pvs.getOrDefault(multipvNumber)
+        for newField, oldField in fields(newInfo, currentPvInfo):
+          if newField.isSome:
+            oldField = newField
+
+        # Ensure the multipv number is set in the final object
+        if currentPvInfo.multipv.isNone:
+          currentPvInfo.multipv = some multipvNumber
+
+        result.pvs[multipvNumber] = currentPvInfo
     of "bestmove":
       if parts.len > 1:
         let moveParts = parts[1].splitWhitespace()
         if moveParts.len > 0:
           try:
-            let move = moveParts[0].toMove(engine.game.currentPosition())
-            result.move = some(move)
+            result.move = moveParts[0].toMove(engine.game.currentPosition())
 
             # Check for ponder move
             if moveParts.len > 2 and moveParts[1] == "ponder":
               try:
-                let ponderMove =
-                  moveParts[2].toMove(engine.game.currentPosition().doMove(move))
-                result.ponder = some(ponderMove)
+                let ponderPos = engine.game.currentPosition().doMove(result.move)
+                result.ponder = some moveParts[2].toMove(ponderPos)
               except ValueError:
-                discard
-          except ValueError:
-            discard
+                discard # Ignore invalid ponder move
 
-      break
+            return
+          except ValueError:
+            # Engine returned an invalid move
+            # This indicates an issue, so we should raise an exception.
+            raise newException(ValueError, "Engine failed to return a valid bestmove.")
+
+      # If bestmove line is malformed or has no move
+      raise newException(ValueError, "Received malformed 'bestmove' from engine.")
     else:
       discard
 

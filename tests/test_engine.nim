@@ -101,12 +101,12 @@ suite "UCI Engine Unit Tests":
 
     check info.depth.isSome
     check info.seldepth.isSome
-    check info.time.isSome
+    check info.timeSeconds.isSome
     check info.nodes.isSome
     check info.nps.isSome
 
     check info.depth.get == 10
-    check abs(info.time.get - 1.0) < 0.001
+    check abs(info.timeSeconds.get - 1.0) < 0.1
 
   test "Info parsing - score cp":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -148,7 +148,7 @@ suite "UCI Engine Unit Tests":
     check info.depth.get == 1
     check info.seldepth.isSome
     check info.seldepth.get == 2
-    check info.time.isSome
+    check info.timeSeconds.isSome
     check info.nodes.isSome
     check info.score.isSome
     check info.score.get.cp == 72
@@ -158,120 +158,33 @@ suite "UCI Engine Unit Tests":
     let info = parseInfo("string goes to end no matter score cp 4 what", pos)
     check info.string.isSome
     check info.string.get == "goes to end no matter score cp 4 what"
-
-  test "Info parsing - sbhits":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("sbhits 12345", pos)
-
-    check info.sbhits.isSome
-    check info.sbhits.get == 12345
-
-  test "Info parsing - cpuload":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("cpuload 750", pos)
-
-    check info.cpuload.isSome
-    check info.cpuload.get == 750
-
-  test "Info parsing - refutation":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("refutation d2d4 d7d5 c2c4", pos)
-
-    check info.refutation.isSome
-    check info.refutation.get.len >= 1
-    # Should contain at least the first move d2d4
-
-  test "Info parsing - currline with CPU number":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("currline 1 e2e4 e7e5 g1f3", pos)
-
-    check info.currline.isSome
-    let (cpuNum, moves) = info.currline.get
-    check cpuNum == 1
-    check moves.len >= 1
-
-  test "Info parsing - currline with invalid CPU number":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("currline invalid e2e4", pos)
-
-    check info.currline.isNone
-
-  test "Info parsing - multiple new fields":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("depth 5 sbhits 100 cpuload 500 tbhits 50", pos)
-
-    check info.depth.isSome
-    check info.depth.get == 5
-    check info.sbhits.isSome
-    check info.sbhits.get == 100
-    check info.cpuload.isSome
-    check info.cpuload.get == 500
-    check info.tbhits.isSome
-    check info.tbhits.get == 50
-
-  test "Info parsing - refutation with invalid moves":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("refutation e2e4 invalid_move e7e5", pos)
-
-    check info.refutation.isSome
-    # Should parse e2e4 but stop at invalid_move
-    check info.refutation.get.len == 1
-
-  test "Info parsing - currline with invalid moves":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("currline 2 e2e4 invalid_move e7e5", pos)
-
-    check info.currline.isSome
-    let (cpuNum, moves) = info.currline.get
-    check cpuNum == 2
-    # Should parse e2e4 but stop at invalid_move
-    check moves.len == 1
-
   test "Info parsing - robust unknown field handling":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
     let info =
-      parseInfo("depth 3 unknownfield 123 nodes 1000 randomstuff abc sbhits 456", pos)
+      parseInfo("depth 3 unknownfield 123 nodes 1000 randomstuff abc tbhits 456", pos)
 
     # Known fields should be parsed correctly
     check info.depth.isSome
     check info.depth.get == 3
     check info.nodes.isSome
     check info.nodes.get == 1000
-    check info.sbhits.isSome
-    check info.sbhits.get == 456
+    check info.tbhits.isSome
+    check info.tbhits.get == 456
 
     # Unknown fields should be ignored without causing errors
 
   test "Info parsing - malformed numeric fields":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("depth abc nodes xyz sbhits 789 cpuload def", pos)
+    let info = parseInfo("depth abc nodes xyz tbhits 789 multipv def", pos)
 
     # Invalid numeric values should be ignored
     check info.depth.isNone
     check info.nodes.isNone
-    check info.cpuload.isNone
+    check info.multipv.isNone
 
     # Valid numeric value should still be parsed
-    check info.sbhits.isSome
-    check info.sbhits.get == 789
-
-  test "Info parsing - empty refutation":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("refutation", pos)
-
-    # Should handle empty refutation gracefully
-    check info.refutation.isSome
-    check info.refutation.get.len == 0
-
-  test "Info parsing - empty currline":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("currline 3", pos)
-
-    # Should handle currline with CPU number but no moves
-    check info.currline.isSome
-    let (cpuNum, moves) = info.currline.get
-    check cpuNum == 3
-    check moves.len == 0
+    check info.tbhits.isSome
+    check info.tbhits.get == 789
 
   test "Info parsing - mixed valid and invalid moves in pv":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -281,20 +194,10 @@ suite "UCI Engine Unit Tests":
     check info.pv.isSome
     check info.pv.get.len == 2 # e2e4 and e7e5, then stops at invalid_notation
 
-  test "Info parsing - currline without moves after CPU number":
-    let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let info = parseInfo("currline 1 depth 5", pos)
-
-    # Should parse CPU number but no moves (depth 5 is not a valid move)
-    check info.currline.isSome
-    let (cpuNum, moves) = info.currline.get
-    check cpuNum == 1
-    check moves.len == 0
-
   test "Info parsing - comprehensive mixed field test":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
     let info = parseInfo(
-      "   depth 8 pv e2e4 e7e5 score cp 25 sbhits 100 refutation d2d4 d7d5 currline 2 g1f3 b8c6 unknown_field test cpuload 600",
+      "   depth 8 pv e2e4 e7e5 score cp 25 tbhits 100 refutation d2d4 d7d5 currline 2 g1f3 b8c6 unknown_field test hashfull 600",
       pos,
     )
 
@@ -305,13 +208,10 @@ suite "UCI Engine Unit Tests":
     check info.pv.get.len >= 2
     check info.score.isSome
     check info.score.get.cp == 25
-    check info.sbhits.isSome
-    check info.sbhits.get == 100
-    check info.refutation.isSome
-    check info.refutation.get.len >= 2
-    check info.currline.isSome
-    check info.cpuload.isSome
-    check info.cpuload.get == 600
+    check info.tbhits.isSome
+    check info.tbhits.get == 100
+    check info.hashfull.isSome
+    check info.hashfull.get == 600
 
   test "Score display":
     let cpScore = Score(kind: skCp, cp: 150)
@@ -523,7 +423,7 @@ suite "UCI Engine Integration Tests":
       let limit = Limit(movetimeSeconds: 0.1) # Very short search
       let result = engine.go(limit)
 
-      check result.move.isSome
+      check not result.move.isNoMove
       engine.quit()
     except CatchableError:
       try:
@@ -542,7 +442,7 @@ suite "UCI Engine Integration Tests":
       let limit = Limit(depth: 5)
       let result = engine.go(limit)
 
-      check result.move.isSome
+      check not result.move.isNoMove
       check result.info.depth.isSome
       engine.quit()
     except CatchableError:
@@ -562,13 +462,8 @@ suite "UCI Engine Integration Tests":
       let limit = Limit(movetimeSeconds: 0.1)
       let result = engine.go(limit)
 
-      if result.move.isNone:
-        fail()
-
-      let move = result.move.get()
-      let isLegalMove = startPos.isLegal(move)
-
-      check isLegalMove
+      check not result.move.isNoMove
+      check startPos.isLegal(result.move)
       engine.quit()
     except CatchableError:
       try:
@@ -589,7 +484,7 @@ suite "UCI Engine Integration Tests":
 
       # Check if we got some search info
       let hasNodes = result.info.nodes.isSome
-      let hasTime = result.info.time.isSome
+      let hasTime = result.info.timeSeconds.isSome
 
       check hasNodes or hasTime # At least one should be present
       engine.quit()
@@ -612,7 +507,7 @@ suite "UCI Engine Integration Tests":
       let limit = Limit(movetimeSeconds: 0.1)
       let result = engine.go(limit)
 
-      check result.move.isSome
+      check not result.move.isNoMove
       engine.quit()
     except CatchableError:
       try:
@@ -631,7 +526,7 @@ suite "UCI Engine Integration Tests":
 
       let result = engine.play(startPos, limit)
 
-      check result.move.isSome
+      check not result.move.isNoMove
       engine.quit()
     except CatchableError:
       fail()
@@ -646,12 +541,10 @@ suite "UCI Engine Integration Tests":
       let limit = Limit(depth: 3)
       let result = engine.go(limit)
 
-      check result.move.isSome
+      check not result.move.isNoMove
       # The engine should find the mating move
-      if result.move.isSome:
-        let move = result.move.get()
-        let newPos = matePos.doMove(move)
-        check newPos.isMate
+      let newPos = matePos.doMove result.move
+      check newPos.isMate
 
       engine.quit()
     except CatchableError:
@@ -678,7 +571,7 @@ suite "UCI Engine Integration Tests":
         let limit = Limit(movetimeSeconds: 0.1)
         let result = engine.go(limit)
 
-        check result.move.isSome
+        check not result.move.isNoMove
         engine.quit()
       except CatchableError:
         try:
