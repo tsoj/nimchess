@@ -9,7 +9,7 @@ A fast and efficient chess library for Nim, with move generation and support for
 Add nimchess to your `.nimble` file:
 
 ```nim
-requires "nimchess >= 0.2.1"
+requires "nimchess >= 0.2.2"
 ```
 
 Or install directly:
@@ -70,8 +70,7 @@ echo game.result
 # Communicate with UCI engines like Stockfish
 var engine = newUciEngine("stockfish")
 let result = engine.play(startPos, Limit(depth: 10))
-if result.move.isSome:
-  echo "Best move: ", result.move.get.toSAN(startPos)
+echo "Best move: ", result.move.toSAN(startPos)
 ```
 
 ## Requirements

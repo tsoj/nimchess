@@ -67,7 +67,7 @@ type
   PlayResult* = object ## Result from asking engine to play a move
     move*: Move = noMove ## Best move found
     ponder*: Option[Move] ## Expected opponent response
-    pvs*: Table[int, UciInfo] ## All principal variations and search info
+    pvs*: Table[int, UciInfo] ## All principal variations (multipv) and search info
 
   UciEngine* = object ## UCI chess engine communication handler
     process: Process = nil

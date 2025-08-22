@@ -92,7 +92,7 @@ runnableExamples:
   let limit = Limit(depth: 10)
 
   let result = engine.play(startPos, limit)
-  if result.move.isSome:
-    echo "Best move: ", result.move.get.toSAN(startPos)
-    if result.info.score.isSome:
-      echo "Evaluation: ", result.info.score.get
+
+  echo "Best move: ", result.move.toSAN(startPos)
+  if result.info.score.isSome:
+    echo "Evaluation: ", result.info.score.get
