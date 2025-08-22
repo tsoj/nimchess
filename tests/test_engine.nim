@@ -598,6 +598,10 @@ suite "UCI Engine Integration Tests":
       # Should have at least one PV line
       check result.pvs.hasKey(1)
 
+      check result.pvs[1].pv != result.pvs[2].pv
+      check result.pvs[1].pv != result.pvs[3].pv
+      check result.pvs[2].pv != result.pvs[3].pv
+
       for pvNum, info in result.pvs.pairs:
         check info.multipv.isSome
         check info.multipv.get() == pvNum
@@ -703,45 +707,6 @@ suite "UCI Engine Integration Tests":
             # Verify the first move matches the best move for PV line 1
             if pvNum == 1:
               check pvMoves[0] == result.move
-
-      engine.quit()
-    except CatchableError:
-      try:
-        engine.quit()
-      except CatchableError:
-        discard
-      fail()
-
-  test "Multi-PV search - score comparison":
-    var engine = newUciEngine(testEngine)
-    try:
-      engine.setOption("MultiPV", "3") # Request 3 PV lines
-
-      # Position where there are clearly different evaluations for different moves
-      let testPos =
-        "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4".toPosition
-      engine.setPosition(testPos)
-
-      let limit = Limit(depth: 7)
-      let result = engine.go(limit)
-
-      check not result.move.isNoMove
-
-      # Verify we have multiple PV lines with scores
-      check result.pvs.len > 1
-
-      var pvScores: seq[tuple[pvNum: int, score: Score]] = @[]
-
-      for pvNum, info in result.pvs.pairs:
-        if info.score.isSome:
-          pvScores.add((pvNum, info.score.get()))
-
-      # Should have at least some scores
-      check pvScores.len >= 1
-
-      # Verify PV numbers are reasonable
-      for i, (pvNum, score) in pvScores:
-        check pvNum > 0 and pvNum <= 10 # Reasonable PV number range
 
       engine.quit()
     except CatchableError:
