@@ -96,4 +96,3 @@ runnableExamples:
     echo "Best move: ", result.move.get.toSAN(startPos)
     if result.info.score.isSome:
       echo "Evaluation: ", result.info.score.get
-  engine.close()

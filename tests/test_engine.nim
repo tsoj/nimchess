@@ -341,6 +341,14 @@ suite "UCI Engine Unit Tests":
     check scores[3] < scores[4] # cp 100 < mate 3
     check scores[4] < scores[5] # mate 3 < mate given
 
+    check scores[2] > scores[1]
+    check scores[1] == scores[1]
+    check scores[4] == scores[4]
+    check scores[4] != scores[5]
+    check scores[3] != scores[4]
+    check scores[4] <= scores[5]
+    check scores[1] >= scores[1]
+
   test "Limit creation":
     let timeLimit = Limit(movetimeSeconds: 5.0)
     check timeLimit.movetimeSeconds == 5.0
@@ -413,7 +421,7 @@ suite "UCI Engine Integration Tests":
     var engine = newUciEngine(testEngine)
     try:
       check engine.initialized
-      check engine.id.len > 0
+      check engine.name.len > 0
 
       engine.quit()
     except CatchableError:
@@ -660,7 +668,7 @@ suite "UCI Engine Integration Tests":
       var engine = newUciEngine(engineName)
       try:
         check engine.initialized
-        check engine.id.len > 0
+        check engine.name.len > 0
 
         # Quick search test
         let startPos =

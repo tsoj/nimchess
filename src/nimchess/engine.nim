@@ -81,16 +81,44 @@ type
   UciEngine* = object ## UCI chess engine communication handler
     process: Process = nil
     options*: Table[string, EngineOption]
-    id*: Table[string, string]
-    debug: bool = false
+    name*: string
+    author*: string
     game*: Game = default Game
+    debug: bool = false
 
 func initialized*(engine: UciEngine): bool =
   engine.process != nil
 
-proc `=copy`*(dest: var UciEngine, source: UciEngine) {.error.}
+proc debugPrint(engine: UciEngine, s: string) =
+  if engine.debug:
+    echo engine.name, " ", engine.process.processID, " ", s
 
-proc `=wasMoved`*(engine: var UciEngine) {.nodestroy.} =
+proc sendCommand(engine: var UciEngine, command: string) =
+  ## Send a command to the engine
+  if not engine.initialized:
+    raise newException(ValueError, "Engine not initialized")
+  assert engine.process.inputStream != nil
+
+  engine.debugPrint "<< " & command
+
+  engine.process.inputStream.writeLine(command)
+  engine.process.inputStream.flush()
+
+proc readLine(engine: var UciEngine): string =
+  ## Read a line from the engine
+  if not engine.initialized:
+    raise newException(ValueError, "Engine not initialized")
+  assert engine.process.inputStream != nil
+
+  result = engine.process.outputStream.readLine()
+
+  engine.debugPrint ">> " & result
+
+  result = result.strip()
+
+func `=copy`*(dest: var UciEngine, source: UciEngine) {.error.}
+
+func `=wasMoved`*(engine: var UciEngine) {.nodestroy.} =
   ## Mark engine as moved - reset to safe state
   engine.process = nil
 
@@ -98,8 +126,7 @@ proc `=destroy`*(engine: var UciEngine) =
   ## Destructor for UciEngine - ensures process is properly closed
   if engine.initialized:
     try:
-      engine.process.inputStream.writeLine("quit")
-      engine.process.inputStream.flush()
+      engine.sendCommand("quit")
     except CatchableError:
       discard # Ignore errors during cleanup
     try:
@@ -107,7 +134,18 @@ proc `=destroy`*(engine: var UciEngine) =
     except IOError, OSError:
       discard # Ignore errors during process cleanup
 
-proc `<`*(a, b: Score): bool =
+func `==`*(a, b: Score): bool =
+  if a.kind != b.kind:
+    return false
+  case a.kind
+  of skCp:
+    return a.cp == b.cp
+  of skMate:
+    return a.mate == b.mate
+  of skMateGiven:
+    return true
+
+func `<`*(a, b: Score): bool =
   if a.kind == skMateGiven:
     return false
   if b.kind == skMateGiven:
@@ -124,7 +162,10 @@ proc `<`*(a, b: Score): bool =
     return b.mate > 0
   return a.cp < b.cp # both skCp
 
-proc `$`*(score: Score): string =
+func `<=`*(a, b: Score): bool =
+  a < b or a == b
+
+func `$`*(score: Score): string =
   case score.kind
   of skCp:
     "cp " & $score.cp
@@ -133,34 +174,7 @@ proc `$`*(score: Score): string =
   of skMateGiven:
     "mate 0"
 
-# Engine communication
-
-proc sendCommand(engine: var UciEngine, command: string) =
-  ## Send a command to the engine
-  if not engine.initialized:
-    raise newException(ValueError, "Engine not initialized")
-  assert engine.process.inputStream != nil
-
-  if engine.debug:
-    echo ">> ", command
-
-  engine.process.inputStream.writeLine(command)
-  engine.process.inputStream.flush()
-
-proc readLine(engine: var UciEngine): string =
-  ## Read a line from the engine
-  if not engine.initialized:
-    raise newException(ValueError, "Engine not initialized")
-  assert engine.process.inputStream != nil
-
-  result = engine.process.outputStream.readLine()
-
-  if engine.debug:
-    echo "<< ", result
-
-  result = result.strip()
-
-proc parseEngineOption*(line: string): EngineOption =
+func parseEngineOption*(line: string): EngineOption =
   ## Parse a UCI option line
   # Format: option name <name> type <type> [default <value>] [min <value>] [max <value>] [var <choice>]*
   var
@@ -213,12 +227,12 @@ proc parseEngineOption*(line: string): EngineOption =
   else:
     raise newException(ValueError, "Unknown option type: " & optionType)
 
-proc parseInfo*(line: string, position: Position): UciInfo =
+func parseInfo*(line: string, position: Position): UciInfo =
   ## Parse a UCI info line
   let parts = line.splitWhitespace()
   var i = 0
 
-  proc parseIntField(field: var Option[int]) =
+  func parseIntField(field: var Option[int]) =
     i += 1
     if i < parts.len:
       try:
@@ -226,7 +240,7 @@ proc parseInfo*(line: string, position: Position): UciInfo =
       except ValueError:
         discard
 
-  proc parseFloatField(field: var Option[float], divisor: float = 1.0) =
+  func parseFloatField(field: var Option[float], divisor: float = 1.0) =
     i += 1
     if i < parts.len:
       try:
@@ -234,7 +248,7 @@ proc parseInfo*(line: string, position: Position): UciInfo =
       except ValueError:
         discard
 
-  proc parseMoveSequence(moves: var Option[seq[Move]], pos: Position) =
+  func parseMoveSequence(moves: var Option[seq[Move]], pos: Position) =
     i += 1
     moves = some newSeq[Move]()
     var tempPos = pos
@@ -247,7 +261,7 @@ proc parseInfo*(line: string, position: Position): UciInfo =
       except ValueError:
         break
 
-  proc parseMoveSequenceFromCurrent(moves: var Option[seq[Move]], pos: Position) =
+  func parseMoveSequenceFromCurrent(moves: var Option[seq[Move]], pos: Position) =
     moves = some newSeq[Move]()
     var tempPos = pos
     while i < parts.len:
@@ -259,7 +273,7 @@ proc parseInfo*(line: string, position: Position): UciInfo =
       except ValueError:
         break
 
-  proc parseMove(moveField: var Option[Move], pos: Position) =
+  func parseMove(moveField: var Option[Move], pos: Position) =
     i += 1
     if i < parts.len:
       try:
@@ -339,7 +353,37 @@ proc parseInfo*(line: string, position: Position): UciInfo =
       break
     i += 1
 
-proc initialize(engine: var UciEngine) =
+proc setPosition*(engine: var UciEngine, game: Game) =
+  ## Set the current position of the engine state
+
+  engine.game = game
+
+  # Check if this is the starting position
+  var cmd = ""
+
+  if engine.game.startPosition.fen() == classicalStartPos.fen():
+    cmd = "position startpos"
+  else:
+    cmd = "position fen " & engine.game.startPosition.fen()
+
+  if game.moves.len > 0:
+    cmd.add(" moves")
+    for move in game.moves:
+      cmd.add(" " & $move)
+
+  engine.sendCommand(cmd)
+
+proc setPosition*(engine: var UciEngine, position: Position, moves: seq[Move] = @[]) =
+  # Create a new game with the given starting position
+  var game = newGame(startPosition = position)
+
+  # Add all the moves to the game
+  for move in moves:
+    game.addMove(move)
+
+  engine.setPosition(game)
+
+proc uciInitialize(engine: var UciEngine) =
   engine.sendCommand("uci")
 
   while true:
@@ -347,27 +391,34 @@ proc initialize(engine: var UciEngine) =
     if line.len == 0:
       continue
 
-    let parts = line.split(maxsplit = 1)
+    let parts = line.splitWhitespace(maxsplit = 1)
     if parts.len == 0:
       continue
 
     case parts[0]
     of "id":
       if parts.len > 1:
-        let idParts = parts[1].split(maxsplit = 1)
-        if idParts.len == 2:
-          engine.id[idParts[0]] = idParts[1]
+        let idParts = parts[1].splitWhitespace(maxsplit = 1)
+        case idParts[0]
+        of "name":
+          engine.name = idParts[1]
+        of "author":
+          engine.author = idParts[1]
+        else:
+          discard
     of "option":
       if parts.len > 1:
         try:
           let option = parseEngineOption(parts[1])
           engine.options[option.name] = option
         except:
-          discard # Ignore malformed options
+          discard
     of "uciok":
-      return
+      break
     else:
       discard
+
+  engine.setPosition(engine.game)
 
 proc start*(engine: var UciEngine, command: string, args: openArray[string] = []) =
   ## Start the engine process
@@ -382,11 +433,14 @@ proc start*(engine: var UciEngine, command: string, args: openArray[string] = []
     command = command, args = args, options = {poUsePath, poStdErrToStdOut}
   )
 
-  engine.initialize
+  engine.uciInitialize
 
-proc newUciEngine*(command: string, args: openArray[string] = []): UciEngine =
+proc newUciEngine*(
+    command: string, args: openArray[string] = [], debug = false
+): UciEngine =
   ## Convenience function to start and initialize an engine
-  # result = default UciEngine
+  result = default UciEngine
+  result.debug = debug
   result.start(command, args)
 
 proc stop*(engine: var UciEngine) =
@@ -394,16 +448,17 @@ proc stop*(engine: var UciEngine) =
   engine.sendCommand("stop")
 
 proc quit*(engine: var UciEngine) =
+  ## Stops the engine process.
+  ## Only needs to be called if you want to stop the engine explicitly
+  ## before going out of scope, otherwise engine deinitialization is
+  ## automatically done by the destructor.
+
   if engine.initialized:
     engine.sendCommand("quit")
     engine.process.close()
 
   # Mark as moved to prevent destructor from running cleanup again
   wasMoved(engine)
-
-proc close*(engine: var UciEngine) =
-  ## Close the engine process
-  engine.quit()
 
 proc setOption*(
     engine: var UciEngine, name: string, value: string, suppressWarning = false
@@ -426,32 +481,9 @@ proc isReady*(engine: var UciEngine): bool =
 proc newGame*(engine: var UciEngine) =
   engine.sendCommand("ucinewgame")
 
-proc setPosition*(engine: var UciEngine, position: Position, moves: seq[Move] = @[]) =
-  ## Set the current position
-  # Create a new game with the given starting position
-  engine.game = newGame(startPosition = position)
-
-  # Add all the moves to the game
-  for move in moves:
-    engine.game.addMove(move)
-
-  # Check if this is the starting position
-  var cmd = ""
-
-  if position.fen() == classicalStartPos.fen():
-    cmd = "position startpos"
-  else:
-    cmd = "position fen " & position.fen()
-
-  if moves.len > 0:
-    cmd.add(" moves")
-    for move in moves:
-      cmd.add(" " & $move)
-
-  engine.sendCommand(cmd)
-
 proc go*(engine: var UciEngine, limit: Limit): PlayResult =
-  ## Ask engine to search and return best move
+  ## Ask engine to search and return best move.
+  ## Uses the previously set position state of the engine.
   var cmd = "go"
 
   if limit.movetimeSeconds < limit.movetimeSeconds.typeof.high:
@@ -472,7 +504,7 @@ proc go*(engine: var UciEngine, limit: Limit): PlayResult =
   if limit.blackIncSeconds != 0.0:
     cmd.add(" binc " & $(int(limit.blackIncSeconds * 1000)))
 
-  if limit.movesToGo >= 0:
+  if limit.movesToGo < limit.movesToGo.typeof.high:
     cmd.add(" movestogo " & $limit.movesToGo)
 
   engine.sendCommand(cmd)
@@ -495,7 +527,7 @@ proc go*(engine: var UciEngine, limit: Limit): PlayResult =
             resultOpt = infoOpt
     of "bestmove":
       if parts.len > 1:
-        let moveParts = parts[1].split()
+        let moveParts = parts[1].splitWhitespace()
         if moveParts.len > 0:
           try:
             let move = moveParts[0].toMove(engine.game.currentPosition())
@@ -516,11 +548,12 @@ proc go*(engine: var UciEngine, limit: Limit): PlayResult =
     else:
       discard
 
-# High-level convenience functions
-
-proc play*(
-    engine: var UciEngine, position: Position, limit: Limit, moves: seq[Move] = @[]
-): PlayResult =
+proc play*(engine: var UciEngine, game: Game, limit: Limit): PlayResult =
   discard engine.isReady()
-  engine.setPosition(position, moves)
-  result = engine.go(limit)
+  engine.setPosition(game)
+  engine.go(limit)
+
+proc play*(engine: var UciEngine, position: Position, limit: Limit): PlayResult =
+  discard engine.isReady()
+  engine.setPosition(position)
+  engine.go(limit)
