@@ -32,8 +32,31 @@ jobs:
               brew install stockfish
               ;;
           esac
-          echo "Stockfish location: $(command -v stockfish || true)"
-          stockfish --help || true
+
+      # Non-Windows: resolve via PATH (works for apt/brew)
+      - name: Resolve stockfish path (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          STOCKFISH_BIN="$(command -v stockfish || true)"
+          if [[ -z "$STOCKFISH_BIN" ]]; then
+            echo "Stockfish not found on PATH" >&2
+            exit 1
+          fi
+          echo "TEST_ENGINE=$STOCKFISH_BIN" >> "$GITHUB_ENV"
+          echo "Using stockfish at: $STOCKFISH_BIN"
+
+      # Windows: find the exe installed by Chocolatey (no shim), no version hardcoding
+      - name: Resolve stockfish path (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem 'C:\Program Files\ChessEngines' -Recurse -Filter 'stockfish*.exe' |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $exe) { throw "Stockfish exe not found under C:\Program Files\ChessEngines" }
+          "TEST_ENGINE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Using stockfish at: $($exe.FullName)"
 
       - name: Setup Nimble
         uses: nim-lang/setup-nimble-action@2cecfd7eb446af54b289e24962ca9a5152e245f6 # v1
@@ -41,10 +64,10 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Nimble Test
+      - name: Nimble Test (explicit engine)
         shell: bash
-        run: nimble test -d:release -d:maxNumPerftNodes=100000
+        run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
 
       - name: Compile test
         shell: bash
-        run: find . -name "*.nim" -print0 | xargs -n 1 -0 nim c $1 -o:"compilertestbinary" && rm compilertestbinary
+        run: find . -name "*.nim" -print0 | xargs -n 1 -0 nimble c $1 -o:"compilertestbinary" && rm compilertestbinary

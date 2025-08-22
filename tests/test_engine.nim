@@ -1,6 +1,10 @@
 import unittest, options, tables, strutils
 import nimchess/[engine, movegen, position, strchess, move, types, game]
 
+const testEngine {.strdefine.} = "stockfish"
+
+echo "Using ", testEngine, " as engine"
+
 suite "UCI Engine Unit Tests":
   test "Option parsing - spin type":
     let line = "name Hash type spin default 16 min 1 max 33554432"
@@ -353,11 +357,11 @@ suite "UCI Engine Unit Tests":
     check limit.nodes == 1000000
 
   test "Engine creation":
-    var engine = newUciEngine("stockfish")
+    var engine = newUciEngine(testEngine)
     check engine.initialized
 
   test "setPosition updates engine game state correctly":
-    var engine = newUciEngine("stockfish")
+    var engine = newUciEngine(testEngine)
 
     # Test setting starting position
     let startPos = classicalStartPos
@@ -396,17 +400,17 @@ suite "UCI Engine Unit Tests":
     check engine.game.currentPosition() == customPos.doMove(additionalMove)
 
 suite "UCI Engine Integration Tests":
-  test "Stockfish - Engine availability":
+  test "Engine availability":
     var engine: UciEngine
     try:
-      engine.start("stockfish")
+      engine.start(testEngine)
       check true # If we get here, engine started successfully
       engine.quit()
     except CatchableError:
       fail()
 
-  test "Stockfish - Engine initialization":
-    var engine = newUciEngine("stockfish")
+  test "Engine initialization":
+    var engine = newUciEngine(testEngine)
     try:
       check engine.initialized
       check engine.id.len > 0
@@ -419,8 +423,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Engine ready check":
-    var engine = newUciEngine("stockfish")
+  test "Engine ready check":
+    var engine = newUciEngine(testEngine)
     try:
       let ready = engine.isReady()
       check ready
@@ -433,8 +437,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Engine options parsing":
-    var engine = newUciEngine("stockfish")
+  test "Engine options parsing":
+    var engine = newUciEngine(testEngine)
     try:
       check engine.options.len > 0
 
@@ -454,8 +458,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Setting engine options":
-    var engine = newUciEngine("stockfish")
+  test "Setting engine options":
+    var engine = newUciEngine(testEngine)
     try:
       # Try to set a common option (most engines have Hash)
       var optionName = ""
@@ -476,8 +480,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Position setup":
-    var engine = newUciEngine("stockfish")
+  test "Position setup":
+    var engine = newUciEngine(testEngine)
     try:
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -501,8 +505,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Basic search (movetime)":
-    var engine = newUciEngine("stockfish")
+  test "Basic search (movetime)":
+    var engine = newUciEngine(testEngine)
     try:
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -520,8 +524,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Depth-limited search":
-    var engine = newUciEngine("stockfish")
+  test "Depth-limited search":
+    var engine = newUciEngine(testEngine)
     try:
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -540,8 +544,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Move validation":
-    var engine = newUciEngine("stockfish")
+  test "Move validation":
+    var engine = newUciEngine(testEngine)
     try:
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -565,8 +569,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - Info parsing during search":
-    var engine = newUciEngine("stockfish")
+  test "Info parsing during search":
+    var engine = newUciEngine(testEngine)
     try:
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -588,8 +592,8 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - New game command":
-    var engine = newUciEngine("stockfish")
+  test "New game command":
+    var engine = newUciEngine(testEngine)
     try:
       engine.newGame()
 
@@ -609,9 +613,9 @@ suite "UCI Engine Integration Tests":
         discard
       fail()
 
-  test "Stockfish - High-level play function":
+  test "High-level play function":
     try:
-      var engine = newUciEngine("stockfish")
+      var engine = newUciEngine(testEngine)
 
       let startPos =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -624,8 +628,8 @@ suite "UCI Engine Integration Tests":
     except CatchableError:
       fail()
 
-  test "Stockfish - Mate position detection":
-    var engine = newUciEngine("stockfish")
+  test "Mate position detection":
+    var engine = newUciEngine(testEngine)
     try:
       # Simple mate in 1 position
       let matePos = "k7/7R/6R1/8/8/8/8/K7 w - - 0 1".toPosition
@@ -650,7 +654,7 @@ suite "UCI Engine Integration Tests":
       fail()
 
   test "Multiple engines - Basic functionality":
-    let engines = ["stockfish"] # Add more engines as needed
+    let engines = [testEngine] # Add more engines as needed
 
     for engineName in engines:
       var engine = newUciEngine(engineName)
@@ -679,7 +683,7 @@ suite "UCI Engine Move Semantics Tests":
   test "UciEngine move construction from function return":
     # Test that engines can be moved from function returns (no copying allowed)
     proc createEngine(): UciEngine =
-      result = newUciEngine("stockfish")
+      result = newUciEngine(testEngine)
 
     # This should use move semantics since copying is disabled with {.error.}
     let engine = createEngine()
@@ -687,7 +691,7 @@ suite "UCI Engine Move Semantics Tests":
 
   test "UciEngine explicit move with system.move":
     # Test explicit move operations
-    var engine1 = newUciEngine("stockfish")
+    var engine1 = newUciEngine(testEngine)
     check engine1.initialized
 
     # Explicit move - this should work since copying is disabled
@@ -701,7 +705,7 @@ suite "UCI Engine Move Semantics Tests":
   test "UciEngine move with ensureMove verification":
     proc stuff() =
       # Test that moves can be verified at compile time
-      var engineA = newUciEngine("stockfish")
+      var engineA = newUciEngine(testEngine)
 
       # # ensureMove should work since the engine will be moved
       var engineB = ensureMove engineA
@@ -719,7 +723,7 @@ suite "UCI Engine Move Semantics Tests":
     proc processEngine(engine: sink UciEngine): bool =
       engine.initialized
 
-    var engine = newUciEngine("stockfish")
+    var engine = newUciEngine(testEngine)
     # This should move the engine into the function parameter
     let result = processEngine(move engine)
     check result
@@ -728,7 +732,7 @@ suite "UCI Engine Move Semantics Tests":
   test "UciEngine move in assignment chain":
     # Test move semantics in assignment chains
     proc createEngine(): UciEngine =
-      newUciEngine("stockfish")
+      newUciEngine(testEngine)
 
     # Chain of moves - each should use move semantics
     var engine1 = createEngine()
@@ -744,8 +748,8 @@ suite "UCI Engine Move Semantics Tests":
     var engines: seq[UciEngine]
 
     # Move engines directly into sequence
-    engines.add(newUciEngine("stockfish")) # Should move from function return
-    engines.add(newUciEngine("stockfish")) # Should move from function return
+    engines.add(newUciEngine(testEngine)) # Should move from function return
+    engines.add(newUciEngine(testEngine)) # Should move from function return
 
     check engines.len == 2
     check engines[0].initialized
@@ -757,7 +761,7 @@ suite "UCI Engine Move Semantics Tests":
       result = engine.initialized
 
     block:
-      let engine = newUciEngine("stockfish")
+      let engine = newUciEngine(testEngine)
       # This should be optimized to a move since it's the last use of engine
       let result = useEngine(engine)
       check result
