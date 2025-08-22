@@ -1,6 +1,6 @@
 import unittest
 import nimchess/[position, strchess, perft]
-import testData/exampleFens
+import testdata/examplefens
 
 import std/[terminal, times]
 

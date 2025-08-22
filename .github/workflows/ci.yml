@@ -44,3 +44,7 @@ jobs:
       - name: Nimble Test
         shell: bash
         run: nimble test -d:release -d:maxNumPerftNodes=100000
+
+      - name: Compile test
+        shell: bash
+        run: find . -name "*.nim" -print0 | xargs -n 1 -0 nim c $1 -o:"compilertestbinary" && rm compilertestbinary

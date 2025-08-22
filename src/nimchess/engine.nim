@@ -11,11 +11,6 @@ import std/[osproc, streams, strutils, options, tables]
 import position, move, types, strchess, movegen, game
 
 type
-  EngineError* = object of CatchableError ## Base exception for engine-related errors
-
-  EngineTerminatedError* = object of EngineError
-    ## Exception raised when engine process terminates unexpectedly
-
   EngineOptionType* = enum
     ## UCI engine option types
     eotCheck = "check"
@@ -114,9 +109,12 @@ proc `=destroy`*(engine: var UciEngine) =
     try:
       engine.process.inputStream.writeLine("quit")
       engine.process.inputStream.flush()
-    except:
+    except CatchableError:
       discard # Ignore errors during cleanup
-    engine.process.close()
+    try:
+      engine.process.close()
+    except IOError, OSError:
+      discard # Ignore errors during process cleanup
 
 proc `<`*(a, b: Score): bool =
   if a.kind == skMateGiven:
@@ -149,7 +147,7 @@ proc `$`*(score: Score): string =
 proc sendCommand(engine: var UciEngine, command: string) =
   ## Send a command to the engine
   if not engine.initialized:
-    raise newException(EngineError, "Engine not initialized")
+    raise newException(ValueError, "Engine not initialized")
   assert engine.process.inputStream != nil
 
   if engine.debug:
@@ -161,7 +159,7 @@ proc sendCommand(engine: var UciEngine, command: string) =
 proc readLine(engine: var UciEngine): string =
   ## Read a line from the engine
   if not engine.initialized:
-    raise newException(EngineError, "Engine not initialized")
+    raise newException(ValueError, "Engine not initialized")
   assert engine.process.inputStream != nil
 
   result = engine.process.outputStream.readLine()
@@ -222,7 +220,7 @@ proc parseEngineOption*(line: string): EngineOption =
       name: name, kind: eotString, defaultString: properties.getOrDefault("default")
     )
   else:
-    raise newException(EngineError, "Unknown option type: " & optionType)
+    raise newException(ValueError, "Unknown option type: " & optionType)
 
 proc parseInfo*(line: string, position: Position): UciInfo =
   ## Parse a UCI info line
@@ -384,7 +382,7 @@ proc start*(engine: var UciEngine, command: string, args: openArray[string] = []
   ## Start the engine process
 
   if engine.initialized:
-    raise newException(EngineError, "Engine already initialized")
+    raise newException(ValueError, "Engine already initialized")
 
   var allArgs = @[command]
   allArgs.add(args)
@@ -535,42 +533,3 @@ proc play*(
   discard engine.isReady()
   engine.setPosition(position, moves)
   result = engine.go(limit)
-
-# Example usage functions (commented out for library)
-when isMainModule:
-  proc example() =
-    ## Example of how to use the engine
-
-    var engine1 = newUciEngine("stockfish")
-    echo "hiiii"
-    echo engine1.game
-    echo engine1
-    # ass
-    var engine = ensureMove engine1
-    echo engine
-    # echo cast[uint](addr engine.process[])
-    # echo engine2
-    # echo cast[uint](addr engine2.process[])
-    # engine2.quit()
-    echo "hiiii2"
-
-    # Set some options
-    engine.setOption("Threads", "4")
-    engine.setOption("Hash", "128")
-
-    # Create a starting position
-    let position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
-    let limit = Limit(movetimeSeconds: 5.0)
-
-    # Get best move
-    let result = engine.play(position, limit)
-    echo "hiiii3"
-
-    if result.move.isSome:
-      echo "Best move: ", result.move.get()
-
-    echo result.info
-
-    engine.quit()
-
-  example()

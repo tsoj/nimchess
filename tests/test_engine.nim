@@ -1,4 +1,4 @@
-import unittest, options, tables, times, strformat, strutils
+import unittest, options, tables, strutils
 import nimchess/[engine, movegen, position, strchess, move, types, game]
 
 suite "UCI Engine Unit Tests":
@@ -88,7 +88,7 @@ suite "UCI Engine Unit Tests":
   test "UCI move parsing - promotion":
     # Use a position where promotion is actually possible
     let pos = "1K5k/P7/8/8/8/8/8/8 w - - 0 1".toPosition
-    let move = "a7a8q".toMove(pos)
+    discard "a7a8q".toMove(pos)
     # The move should be valid in this position
 
   test "Info parsing - basic info":
@@ -152,7 +152,8 @@ suite "UCI Engine Unit Tests":
   test "Info parsing - string info":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
     let info = parseInfo("string goes to end no matter score cp 4 what", pos)
-    # Implementation specific - depends on how string parsing is handled
+    check info.string.isSome
+    check info.string.get == "goes to end no matter score cp 4 what"
 
   test "Info parsing - sbhits":
     let pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -395,60 +396,44 @@ suite "UCI Engine Unit Tests":
     check engine.game.currentPosition() == customPos.doMove(additionalMove)
 
 suite "UCI Engine Integration Tests":
-  # These tests require an actual UCI engine to be available
-  # They will be skipped if the engine is not found
-
-  template skipIfEngineNotFound(engineName: string) =
-    try:
-      var engine = newUciEngine(engineName)
-      engine.quit()
-    except:
-      skip()
-
   test "Stockfish - Engine availability":
     var engine: UciEngine
     try:
       engine.start("stockfish")
       check true # If we get here, engine started successfully
       engine.quit()
-    except:
+    except CatchableError:
       fail()
 
   test "Stockfish - Engine initialization":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       check engine.initialized
       check engine.id.len > 0
 
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Engine ready check":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       let ready = engine.isReady()
       check ready
 
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Engine options parsing":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       check engine.options.len > 0
@@ -462,16 +447,14 @@ suite "UCI Engine Integration Tests":
 
       check hasHashOption
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Setting engine options":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       # Try to set a common option (most engines have Hash)
@@ -486,16 +469,14 @@ suite "UCI Engine Integration Tests":
         check true # If we get here, option was set successfully
 
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Position setup":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       let startPos =
@@ -513,16 +494,14 @@ suite "UCI Engine Integration Tests":
 
       check true # If we get here, position setup was successful
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Basic search (movetime)":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       let startPos =
@@ -534,17 +513,14 @@ suite "UCI Engine Integration Tests":
 
       check result.move.isSome
       engine.quit()
-    except:
-      raise
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Depth-limited search":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       let startPos =
@@ -557,16 +533,14 @@ suite "UCI Engine Integration Tests":
       check result.move.isSome
       check result.info.depth.isSome
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Move validation":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       let startPos =
@@ -584,16 +558,14 @@ suite "UCI Engine Integration Tests":
 
       check isLegalMove
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - Info parsing during search":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       let startPos =
@@ -609,16 +581,14 @@ suite "UCI Engine Integration Tests":
 
       check hasNodes or hasTime # At least one should be present
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - New game command":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       engine.newGame()
@@ -632,16 +602,14 @@ suite "UCI Engine Integration Tests":
 
       check result.move.isSome
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
   test "Stockfish - High-level play function":
-    skipIfEngineNotFound("stockfish")
-
     try:
       var engine = newUciEngine("stockfish")
 
@@ -653,12 +621,10 @@ suite "UCI Engine Integration Tests":
 
       check result.move.isSome
       engine.quit()
-    except:
+    except CatchableError:
       fail()
 
   test "Stockfish - Mate position detection":
-    skipIfEngineNotFound("stockfish")
-
     var engine = newUciEngine("stockfish")
     try:
       # Simple mate in 1 position
@@ -673,13 +639,13 @@ suite "UCI Engine Integration Tests":
       if result.move.isSome:
         let move = result.move.get()
         let newPos = matePos.doMove(move)
-        # We can't easily check if it's checkmate without implementing that logic
+        check newPos.isMate
 
       engine.quit()
-    except:
+    except CatchableError:
       try:
         engine.quit()
-      except:
+      except CatchableError:
         discard
       fail()
 
@@ -687,8 +653,6 @@ suite "UCI Engine Integration Tests":
     let engines = ["stockfish"] # Add more engines as needed
 
     for engineName in engines:
-      skipIfEngineNotFound(engineName)
-
       var engine = newUciEngine(engineName)
       try:
         check engine.initialized
@@ -704,12 +668,100 @@ suite "UCI Engine Integration Tests":
 
         check result.move.isSome
         engine.quit()
-      except:
+      except CatchableError:
         try:
           engine.quit()
-        except:
+        except CatchableError:
           discard
         fail()
+
+suite "UCI Engine Move Semantics Tests":
+  test "UciEngine move construction from function return":
+    # Test that engines can be moved from function returns (no copying allowed)
+    proc createEngine(): UciEngine =
+      result = newUciEngine("stockfish")
+
+    # This should use move semantics since copying is disabled with {.error.}
+    let engine = createEngine()
+    check engine.initialized
+
+  test "UciEngine explicit move with system.move":
+    # Test explicit move operations
+    var engine1 = newUciEngine("stockfish")
+    check engine1.initialized
+
+    # Explicit move - this should work since copying is disabled
+    var engine2 = system.move(engine1)
+    check engine2.initialized
+
+    # engine1 should be in moved state - =wasMoved should have set process = nil
+    # The moved engine should still be safe to use (won't crash destructor)
+    check not engine1.initialized
+
+  test "UciEngine move with ensureMove verification":
+    proc stuff() =
+      # Test that moves can be verified at compile time
+      var engineA = newUciEngine("stockfish")
+
+      # # ensureMove should work since the engine will be moved
+      var engineB = ensureMove engineA
+      check engineB.initialized
+
+      engineB.setOption("Hash", "8")
+
+      let result = engineB.play(classicalStartPos, Limit(depth: 4))
+      check result.info.depth.get == 4
+
+    stuff()
+
+  test "UciEngine sink parameter move":
+    # Test that engines can be moved into sink parameters
+    proc processEngine(engine: sink UciEngine): bool =
+      engine.initialized
+
+    var engine = newUciEngine("stockfish")
+    # This should move the engine into the function parameter
+    let result = processEngine(move engine)
+    check result
+    check not engine.initialized
+
+  test "UciEngine move in assignment chain":
+    # Test move semantics in assignment chains
+    proc createEngine(): UciEngine =
+      newUciEngine("stockfish")
+
+    # Chain of moves - each should use move semantics
+    var engine1 = createEngine()
+    var engine2: UciEngine
+    engine2 = system.move(engine1)
+
+    check not engine1.initialized
+    check engine2.initialized
+    # engine1 should be safely moved (=wasMoved called)
+
+  test "UciEngine move with sequence operations":
+    # Test moving engines into collections
+    var engines: seq[UciEngine]
+
+    # Move engines directly into sequence
+    engines.add(newUciEngine("stockfish")) # Should move from function return
+    engines.add(newUciEngine("stockfish")) # Should move from function return
+
+    check engines.len == 2
+    check engines[0].initialized
+    check engines[1].initialized
+
+  test "UciEngine lastReadOf optimization":
+    # Test that last reads are optimized to moves
+    proc useEngine(engine: UciEngine): bool =
+      result = engine.initialized
+
+    block:
+      let engine = newUciEngine("stockfish")
+      # This should be optimized to a move since it's the last use of engine
+      let result = useEngine(engine)
+      check result
+      # engine is consumed here and shouldn't be accessible afterward
 
 # Test runner that mimics the original comprehensive test suite
 when isMainModule:

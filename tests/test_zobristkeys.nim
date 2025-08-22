@@ -1,6 +1,6 @@
 import unittest
 import nimchess/[position, strchess, types]
-import testData/exampleFens
+import testdata/examplefens
 
 suite "Zobrist Key Tests":
   test "No Zobrist key collisions":
