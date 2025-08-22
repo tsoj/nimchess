@@ -64,7 +64,7 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Nimble Test (explicit engine)
+      - name: Nimble Test
         shell: bash
         run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
 
