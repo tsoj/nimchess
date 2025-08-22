@@ -35,6 +35,11 @@ export bitboard, engine, game, move, movegen, pgn, position, strchess, types
 ## - `pgn <nimchess/pgn.html>`_: PGN (Portable Game Notation) reading and writing
 ## - `strchess <nimchess/strchess.html>`_: String parsing utilities (FEN, SAN, UCI)
 ##
+## Engine Communication
+## --------------------
+##
+## - `engine <nimchess/engine.html>`_: UCI chess engine communication and analysis
+##
 ## Quick Start
 ## ===========
 ##
@@ -76,3 +81,19 @@ runnableExamples:
 
   for attackedPawnSquare in attackedPawns:
     echo attackedPawnSquare
+##
+## Working with chess engines:
+##
+runnableExamples:
+  # Note: This example requires a UCI engine like Stockfish to be installed
+  var engine = newUciEngine("stockfish")
+
+  let startPos = classicalStartPos
+  let limit = Limit(depth: 10)
+
+  let result = engine.play(startPos, limit)
+  if result.move.isSome:
+    echo "Best move: ", result.move.get.toSAN(startPos)
+    if result.info.score.isSome:
+      echo "Evaluation: ", result.info.score.get
+  engine.close()

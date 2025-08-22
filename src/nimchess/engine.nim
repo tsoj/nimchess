@@ -1,12 +1,3 @@
-## UCI (Universal Chess Interface) engine communication module for nimchess
-##
-## This module provides functionality to communicate with chess engines
-## that support the UCI protocol, allowing you to:
-## - Start and configure engines
-## - Send positions and get best moves
-## - Perform analysis with configurable limits
-## - Handle engine options and settings
-
 import std/[osproc, streams, strutils, options, tables]
 import position, move, types, strchess, movegen, game
 

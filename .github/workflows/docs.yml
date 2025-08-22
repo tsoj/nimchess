@@ -2,7 +2,7 @@ name: docs
 on:
   push:
     branches:
-      - 'main'
+      - "main"
 
 permissions:
   contents: read
@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  nim-version: 'stable'
+  nim-version: "stable"
   nim-src: src/${{ github.event.repository.name }}.nim
   outdir: htmldocs
 
@@ -24,6 +24,11 @@ jobs:
         with:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Stockfish # Needed for running doc examples
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y stockfish
+
       - name: Generate docs
         run: |
           nimble doc --index:on --project \

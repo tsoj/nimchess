@@ -24,6 +24,7 @@ nimble install nimchess
 - FEN parsing and generation
 - PGN reading and writing with SAN notation support
 - Chess960 (Fischer Random) support
+- UCI chess engine communication and analysis
 
 ## Quick Examples
 
@@ -61,6 +62,17 @@ let game = readPgnFile("game.pgn")[0]
 echo game.headers["White"]
 echo game.headers["Black"]
 echo game.result
+```
+
+### Engine Communication
+
+```nim
+# Communicate with UCI engines like Stockfish
+var engine = newUciEngine("stockfish")
+let result = engine.play(startPos, Limit(depth: 10))
+if result.move.isSome:
+  echo "Best move: ", result.move.get.toSAN(startPos)
+engine.close()
 ```
 
 ## Requirements
