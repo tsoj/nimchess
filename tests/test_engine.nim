@@ -580,6 +580,177 @@ suite "UCI Engine Integration Tests":
           discard
         fail()
 
+  test "Multi-PV search - basic functionality":
+    var engine = newUciEngine(testEngine)
+    try:
+      engine.setOption("MultiPV", "3") # Request 3 PV lines
+
+      let startPos =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+      engine.setPosition(startPos)
+
+      let limit = Limit(depth: 6) # Deeper search to get multiple PVs
+      let result = engine.go(limit)
+
+      check not result.move.isNoMove
+      check result.pvs.len == 3
+
+      # Should have at least one PV line
+      check result.pvs.hasKey(1)
+
+      for pvNum, info in result.pvs.pairs:
+        check info.multipv.isSome
+        check info.multipv.get() == pvNum
+
+      engine.quit()
+    except CatchableError:
+      try:
+        engine.quit()
+      except CatchableError:
+        discard
+      fail()
+
+  test "Multi-PV search - tactical position":
+    var engine = newUciEngine(testEngine)
+    try:
+      engine.setOption("MultiPV", "4") # Request 4 PV lines
+
+      # Tactical position with multiple good moves
+      let tacticalPos =
+        "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4".toPosition
+      engine.setPosition(tacticalPos)
+
+      let limit = Limit(depth: 8)
+      let result = engine.go(limit)
+
+      check not result.move.isNoMove
+      check result.pvs.len == 4
+
+      # Check that we got the main PV
+      check result.pvs.hasKey(1)
+      let mainPV = result.pvs[1]
+      check mainPV.multipv.isSome
+      check mainPV.multipv.get() == 1
+
+      # Verify PV consistency
+      for pvNum, info in result.pvs.pairs:
+        check info.multipv.isSome
+        check info.multipv.get() == pvNum
+        if info.pv.isSome:
+          check info.pv.get().len > 0
+
+      engine.quit()
+    except CatchableError:
+      try:
+        engine.quit()
+      except CatchableError:
+        discard
+      fail()
+
+  test "Multi-PV search - info accessor function":
+    var engine = newUciEngine(testEngine)
+    try:
+      let startPos =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+      engine.setPosition(startPos)
+
+      let limit = Limit(depth: 5)
+      let result = engine.go(limit)
+
+      check not result.move.isNoMove
+
+      # Test the info() function which should return the main PV line
+      let mainInfo = result.info()
+      check result.pvs.hasKey(1)
+
+      # The info() function should return the same as pvs[1]
+      let directMainInfo = result.pvs[1]
+      check mainInfo.depth == directMainInfo.depth
+      check mainInfo.score == directMainInfo.score
+      check mainInfo.pv == directMainInfo.pv
+
+      engine.quit()
+    except CatchableError:
+      try:
+        engine.quit()
+      except CatchableError:
+        discard
+      fail()
+
+  test "Multi-PV search - PV line validation":
+    var engine = newUciEngine(testEngine)
+    try:
+      engine.setOption("MultiPV", "2") # Request 2 PV lines
+
+      let startPos =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
+      engine.setPosition(startPos)
+
+      let limit = Limit(movetimeSeconds: 1.0) # Longer search
+      let result = engine.go(limit)
+
+      check not result.move.isNoMove
+      check result.pvs.len == 2
+
+      # Validate that all PV moves are legal
+      for pvNum, info in result.pvs.pairs:
+        if info.pv.isSome:
+          let pvMoves = info.pv.get()
+          if pvMoves.len > 0:
+            # First move should be legal from the starting position
+            check startPos.isLegal(pvMoves[0])
+
+            # Verify the first move matches the best move for PV line 1
+            if pvNum == 1:
+              check pvMoves[0] == result.move
+
+      engine.quit()
+    except CatchableError:
+      try:
+        engine.quit()
+      except CatchableError:
+        discard
+      fail()
+
+  test "Multi-PV search - score comparison":
+    var engine = newUciEngine(testEngine)
+    try:
+      engine.setOption("MultiPV", "3") # Request 3 PV lines
+
+      # Position where there are clearly different evaluations for different moves
+      let testPos =
+        "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4".toPosition
+      engine.setPosition(testPos)
+
+      let limit = Limit(depth: 7)
+      let result = engine.go(limit)
+
+      check not result.move.isNoMove
+
+      # Verify we have multiple PV lines with scores
+      check result.pvs.len > 1
+
+      var pvScores: seq[tuple[pvNum: int, score: Score]] = @[]
+
+      for pvNum, info in result.pvs.pairs:
+        if info.score.isSome:
+          pvScores.add((pvNum, info.score.get()))
+
+      # Should have at least some scores
+      check pvScores.len >= 1
+
+      # Verify PV numbers are reasonable
+      for i, (pvNum, score) in pvScores:
+        check pvNum > 0 and pvNum <= 10 # Reasonable PV number range
+
+      engine.quit()
+    except CatchableError:
+      try:
+        engine.quit()
+      except CatchableError:
+        discard
+      fail()
+
 suite "UCI Engine Move Semantics Tests":
   test "UciEngine move construction from function return":
     # Test that engines can be moved from function returns (no copying allowed)
