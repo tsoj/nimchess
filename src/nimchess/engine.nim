@@ -109,9 +109,9 @@ proc readLine(engine: var UciEngine): string =
 
 func `=copy`*(dest: var UciEngine, source: UciEngine) {.error.}
 
-func `=wasMoved`*(engine: var UciEngine) {.nodestroy.} =
+func `=wasMoved`*(engine: var UciEngine) =
   ## Mark engine as moved - reset to safe state
-  engine.process = nil
+  `=wasMoved`(engine.process)
 
 proc `=destroy`*(engine: var UciEngine) =
   ## Destructor for UciEngine - ensures process is properly closed
