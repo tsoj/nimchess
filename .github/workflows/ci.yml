@@ -59,7 +59,7 @@ jobs:
           Write-Host "Using stockfish at: $($exe.FullName)"
 
       - name: Setup Nimble
-        uses: nim-lang/setup-nimble-action@2cecfd7eb446af54b289e24962ca9a5152e245f6 # v1
+        uses: nim-lang/setup-nimble-action@d27cc947821b39107883efa4a65f890a12d7d7d8
         with:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
