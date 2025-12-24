@@ -186,9 +186,16 @@ proc readPgnFile*(filename: string, suppressWarnings = false): seq[Game] =
 func toPgnString*(game: Game): string =
   result = ""
 
+  const canonicalOrder = ["Event", "Site", "Date", "Round", "White", "Black", "Result"]
+
+  for key in canonicalOrder:
+    if key in game.headers:
+      result &= &"[{key} \"{game.headers[key]}\"]\n"
+
   # Add headers
   for key, value in game.headers:
-    result &= &"[{key} \"{value}\"]\n"
+    if key notin canonicalOrder:
+      result &= &"[{key} \"{value}\"]\n"
 
   # Add empty line after headers
   if game.headers.len > 0:
