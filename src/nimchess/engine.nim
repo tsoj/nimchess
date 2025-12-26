@@ -315,9 +315,8 @@ proc setPosition*(engine: var UciEngine, game: Game) =
     cmd = "position fen " & engine.game.startPosition.fen()
 
   if game.moves.len > 0:
-    cmd.add(" moves")
-    for move in game.moves:
-      cmd.add(" " & $move)
+    cmd.add(" moves ")
+    cmd.add game.moves.notation(engine.game.startPosition)
 
   engine.sendCommand(cmd)
 
