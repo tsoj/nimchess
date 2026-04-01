@@ -1,4 +1,4 @@
-import types, bitboard, castling, zobristbitmasks
+import types, bitboard, castling
 export types, bitboard, CastlingSide
 
 type Position* = object
@@ -9,8 +9,6 @@ type Position* = object
   us*: Color
   halfmovesPlayed*: int
   halfmoveClock*: int
-  pawnKey*: ZobristKey
-  zobristKey*: ZobristKey
 
 func enemy*(position: Position): Color =
   position.us.opposite
@@ -47,18 +45,10 @@ func addPiece*(position: var Position, color: Color, piece: Piece, target: Squar
   position[piece] |= bit
   position[color] |= bit
 
-  position.zobristKey ^= zobristPieceBitmasks[color][piece][target]
-  if piece == pawn:
-    position.pawnKey ^= zobristPieceBitmasks[color][piece][target]
-
 func removePiece*(position: var Position, color: Color, piece: Piece, source: Square) =
   let bit = not source.toBitboard
   position[piece] &= bit
   position[color] &= bit
-
-  position.zobristKey ^= zobristPieceBitmasks[color][piece][source]
-  if piece == pawn:
-    position.pawnKey ^= zobristPieceBitmasks[color][piece][source]
 
 func movePiece*(
     position: var Position, color: Color, piece: Piece, source, target: Square
@@ -133,31 +123,6 @@ func inCheck*(position: Position, us: Color): bool =
   else:
     position.isAttacked(us, kingSquare)
 
-func calculateZobristKeys*(
-    position: Position
-): tuple[zobristKey: ZobristKey, pawnKey: ZobristKey] =
-  result = (
-    zobristKey:
-      position.enPassantTarget.ZobristKey xor zobristSideToMoveBitmasks[position.us],
-    pawnKey: 0.ZobristKey,
-  )
-  for color in white .. black:
-    for piece in pawn .. king:
-      for square in position[piece, color]:
-        result.zobristKey ^= zobristPieceBitmasks[color][piece][square]
-        if piece == pawn:
-          result.pawnKey ^= zobristPieceBitmasks[color][piece][square]
-
-    for side in queenside .. kingside:
-      let rookSource = position.rookSource[color][side]
-      result.zobristKey ^= rookSourceBitmasks[rookSource]
-
-func zobristKeysAreOk*(position: Position): bool =
-  (position.zobristKey, position.pawnKey) == position.calculateZobristKeys
-
-func setZobristKeys*(position: var Position) =
-  (position.zobristKey, position.pawnKey) = position.calculateZobristKeys
-
 func isChess960*(position: Position): bool =
   const
     classicalRookSource =
@@ -195,11 +160,7 @@ func mirror(
         result.rookSource[color][castlingSide] =
           result.rookSource[color][castlingSide].toBitboard.mirrorFn.toSquare
 
-func mirrorVertically*(
-    position: Position,
-    swapColors: static bool = true,
-    skipKeyCalculation: static bool = false,
-): Position =
+func mirrorVertically*(position: Position, swapColors: static bool = true): Position =
   result = position.mirror(mirrorVertically)
 
   when swapColors:
@@ -208,19 +169,11 @@ func mirrorVertically*(
     result.halfmovesPlayed += (if result.us == black: -1 else: +1)
     result.us = result.enemy
 
-  when not skipKeyCalculation:
-    result.setZobristKeys
-
-func mirrorHorizontally*(
-    position: Position, skipKeyCalculation: static bool = false
-): Position =
+func mirrorHorizontally*(position: Position): Position =
   result = position.mirror(mirrorHorizontally)
 
   for color in white .. black:
     swap result.rookSource[color][kingside], result.rookSource[color][queenside]
-
-  when not skipKeyCalculation:
-    result.setZobristKeys
 
 func `~`*(a, b: Position): bool =
   ## Tests if two positions are repetition-equal.

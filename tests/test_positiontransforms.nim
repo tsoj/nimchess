@@ -4,7 +4,7 @@ import testdata/examplefens
 
 suite "Position Transform Tests":
   template rotate(position: Position): Position =
-    position.mirrorHorizontally(skipKeyCalculation = true).mirrorVertically()
+    position.mirrorHorizontally.mirrorVertically()
 
   test "Identity transforms":
     for fen in someFens:
@@ -70,17 +70,6 @@ suite "Position Transform Tests":
 
       # Test that vertical mirror is its own inverse
       check position == position.mirrorVertically.mirrorVertically
-
-  test "Zobrist keys after transforms":
-    for fen in someFens:
-      let position = fen.toPosition(suppressWarnings = true)
-
-      # Verify that transforms with key calculation maintain key consistency
-      let vertMirrored = position.mirrorVertically(skipKeyCalculation = false)
-      check vertMirrored.zobristKeysAreOk
-
-      let horizMirrored = position.mirrorHorizontally(skipKeyCalculation = false)
-      check horizMirrored.zobristKeysAreOk
 
   test "Color swapping in vertical mirror":
     let testFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

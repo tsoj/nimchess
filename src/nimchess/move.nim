@@ -1,4 +1,4 @@
-import types, bitboard, position, zobristbitmasks, castling
+import types, bitboard, position, castling
 export types, position
 
 type
@@ -272,19 +272,10 @@ func isPseudoLegal*(position: Position, move: Move): bool =
 func doNullMove*(position: Position): Position =
   result = position
 
-  result.zobristKey ^= result.enPassantTarget.ZobristKey
   result.enPassantTarget = noSquare
-  result.zobristKey ^= result.enPassantTarget.ZobristKey
-
-  result.zobristKey ^= zobristSideToMoveBitmasks[white]
-  result.zobristKey ^= zobristSideToMoveBitmasks[black]
-
   result.halfmovesPlayed += 1
   result.halfmoveClock += 1
-
   result.us = result.enemy
-
-  assert result.zobristKeysAreOk
 
 func doMove*(
     position: Position, move: Move, allowNullMove: static bool = false
@@ -294,7 +285,6 @@ func doMove*(
       return position.doNullMove()
 
   result = position
-  assert result.zobristKeysAreOk
   assert result.isPseudoLegal(move), $position & ", " & $move
   let
     target = move.target
@@ -306,27 +296,19 @@ func doMove*(
     us = result.us
     enemy = result.enemy
 
-  result.zobristKey ^= result.enPassantTarget.ZobristKey
   if enPassantTarget != noSquare:
     result.enPassantTarget = enPassantTarget
   else:
     result.enPassantTarget = noSquare
-  result.zobristKey ^= result.enPassantTarget.ZobristKey
 
   if moved == king:
-    result.zobristKey ^= rookSourceBitmasks[result.rookSource[us][queenside]]
-    result.zobristKey ^= rookSourceBitmasks[result.rookSource[us][kingside]]
     result.rookSource[us] = [noSquare, noSquare]
 
   for side in queenside .. kingside:
     if result.rookSource[us][side] == source:
-      result.zobristKey ^= rookSourceBitmasks[result.rookSource[us][side]]
       result.rookSource[us][side] = noSquare
-      result.zobristKey ^= rookSourceBitmasks[noSquare]
     if result.rookSource[enemy][side] == target:
-      result.zobristKey ^= rookSourceBitmasks[result.rookSource[enemy][side]]
       result.rookSource[enemy][side] = noSquare
-      result.zobristKey ^= rookSourceBitmasks[noSquare]
 
   # en passant
   if move.isEnPassantCapture:
@@ -367,11 +349,6 @@ func doMove*(
     result.halfmoveClock = 0
 
   result.us = result.enemy
-
-  result.zobristKey ^= zobristSideToMoveBitmasks[white]
-  result.zobristKey ^= zobristSideToMoveBitmasks[black]
-
-  assert result.zobristKeysAreOk
 
 func isLegal*(position: Position, move: Move): bool =
   if not position.isPseudoLegal(move):

@@ -220,14 +220,6 @@ suite "Types Tests":
     expect(ValueError):
       discard '1'.toColoredPiece
 
-  test "ZobristKey XOR assignment":
-    var key1: ZobristKey = 0x123456789ABCDEF0'u64
-    let key2: ZobristKey = 0xFEDCBA9876543210'u64
-    let expected = key1 xor key2
-
-    key1 ^= key2
-    check key1 == expected
-
   test "boardString function":
     # Test with a simple function that returns some squares
     proc testSquares(square: Square): Option[string] =

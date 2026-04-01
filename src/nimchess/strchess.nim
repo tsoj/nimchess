@@ -83,7 +83,6 @@ func debugString*(position: Position): string =
   result &=
     "halfmovesPlayed: " & $position.halfmovesPlayed & ", halfmoveClock: " &
     $position.halfmoveClock & "\n"
-  result &= "zobristKey: " & $position.zobristKey & "\n"
   result &= "rookSource: " & $position.rookSource
 
 proc toPosition*(fen: string, suppressWarnings = false): Position =
@@ -234,8 +233,6 @@ proc toPosition*(fen: string, suppressWarnings = false): Position =
       ValueError,
       "FEN fullmove number is not correctly formatted: " & getCurrentExceptionMsg(),
     )
-
-  result.setZobristKeys
 
   if result[white, king].countSetBits != 1 or result[black, king].countSetBits != 1:
     if not suppressWarnings:

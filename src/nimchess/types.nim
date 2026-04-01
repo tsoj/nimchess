@@ -36,8 +36,6 @@ type
     else:
       color*: Color
 
-  ZobristKey* = uint64
-
 func newSquare*(file: 0 .. 7, rank: 0 .. 7): Square =
   Square(rank * 8 + file)
 
@@ -97,9 +95,6 @@ func squareManhattanDistance*(a: Square, b: Square): int =
   let fileDiff = abs(a.fileNumber - b.fileNumber)
   let rankDiff = abs(a.rankNumber - b.rankNumber)
   fileDiff + rankDiff
-
-func `^=`*(a: var ZobristKey, b: ZobristKey) =
-  a = a xor b
 
 func boardString*(f: proc(square: Square): Option[string] {.noSideEffect.}): string =
   result = " _ _ _ _ _ _ _ _\n"
