@@ -64,14 +64,11 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/checkout@v4
-      - name: Check `nph` formatting
-        uses: arnetheduck/nph-action@7133d4ce6d23f9f71f131a2739b0108cecfc7ec0
-        with:
-          version: latest
-          options: "."
-          fail: true
-          suggest: true
+      - name: Check formatting
+        shell: bash
+        run: |
+          nimble install nph
+          $HOME/.nimble/bin/nph --check ./
 
       - name: Nimble Test
         shell: bash
