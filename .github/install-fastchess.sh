@@ -55,4 +55,8 @@ find "$TMPDIR" -type f -name 'fastchess*' -exec mv {} "$INSTALL_DIR/" \;
 chmod +x "$INSTALL_DIR"/fastchess* 2>/dev/null || true
 rm -rf "$TMPDIR"
 
+if [[ -f "$INSTALL_DIR/fastchess.exe" ]]; then
+  mv "$INSTALL_DIR/fastchess.exe" "$INSTALL_DIR/fastchess"
+fi
+
 echo "fastchess installed to $INSTALL_DIR"

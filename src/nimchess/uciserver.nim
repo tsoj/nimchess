@@ -29,7 +29,7 @@
 ##   server.uciLoop()
 
 import std/[strutils, atomics, options]
-import position, move, types, strchess, movegen, ucitypes, game
+import position, types, ucitypes, game, strchess, movegen
 
 export ucitypes, game
 
