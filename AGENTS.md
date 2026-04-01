@@ -29,10 +29,11 @@ No external Nim dependencies — only the Nim stdlib is used. Do not add third-p
 
 ## Test and Development Commands
 - Test for compilation errors of single files: `nim check src/nimchess/somefile.nim`.
-- Run all tests: `nimble test -d:release -d:maxNumPerftNodes=100000`.
 - Run specific test with: `nim r -d:release tests/test_sometest.nim`
+- To run all tests, only do this: `nimble test -d:release -d:maxNumPerftNodes=100000`.
 - Tests import `nimchess` (not individual submodules) via the path switch in `tests/config.nims`.
 - The `-d:release` flag matters: perft tests are performance-sensitive.
+- Prefer to use `nim r ...` instead of `nim c --run ...` to avoid leaving binaries around.
 
 ## Coding Style & Naming Conventions
 - Language: Nim (`requires "nim >= 2.2.4"`).
