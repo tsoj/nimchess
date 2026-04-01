@@ -1,5 +1,5 @@
 # fr  om system import int8, int32, high
-import std/[math, options, strutils]
+import std/[options, strutils]
 export options
 
 #!fmt: off
