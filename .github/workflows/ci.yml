@@ -79,4 +79,8 @@ jobs:
           export PATH="$HOME/.nimble/bin:$PATH"
           echo "nph version (make sure to use the same one): $(nph --version)"
           nph --diff .
-          nph --check .
+          if ! nph --check .; then
+            echo ""
+            echo "::error::Code formatting check failed. Please run 'nph .' locally and commit the changes."
+            exit 1
+          fi
