@@ -78,9 +78,5 @@ jobs:
           nimble install nph
           export PATH="$HOME/.nimble/bin:$PATH"
           echo "nph version (make sure to use the same one): $(nph --version)"
-          nph .
-          if ! git diff --exit-code; then
-            echo ""
-            echo "::error::Code formatting check failed. Please run 'nph .' locally and commit the changes."
-            exit 1
-          fi
+          nph --diff .
+          nph --check .

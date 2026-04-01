@@ -40,6 +40,9 @@ func newSquare*(file: 0 .. 7, rank: 0 .. 7): Square =
   Square(rank * 8 + file)
 
 func rankNumber*(square: Square): 0 .. 7 =
+
+
+
   square.int div 8
 
 func fileNumber*(square: Square): 0 .. 7 =
