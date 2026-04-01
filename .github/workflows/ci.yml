@@ -64,13 +64,17 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-
+      - name: Install nph
+        shell: bash
+        run: |
+          nimble install nph
+          export PATH="$HOME/.nimble/bin:$PATH"
+          echo "nph version (make sure to use the same one): $(nph --version)"
 
       - name: nph
         run: |
           ./nph .
         shell: bash
-
 
       - name: View diff
         run: |
