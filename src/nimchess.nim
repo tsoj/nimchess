@@ -1,10 +1,10 @@
 import
   nimchess/[
-    bitboard, engine, game, move, movegen, pgn, position, strchess, types, ucitypes,
+    bitboard, uciclient, game, move, movegen, pgn, position, strchess, types, ucitypes,
     uciserver,
   ]
 export
-  bitboard, engine, game, move, movegen, pgn, position, strchess, types, ucitypes,
+  bitboard, uciclient, game, move, movegen, pgn, position, strchess, types, ucitypes,
   uciserver
 ## ========
 ## nimchess
@@ -44,7 +44,8 @@ export
 ## Engine Communication
 ## --------------------
 ##
-## - `engine <nimchess/engine.html>`_: UCI chess engine communication and analysis
+## - `uciclient <nimchess/uciclient.html>`_: UCI chess engine communication and analysis
+## - `uciserver <nimchess/uciserver.html>`_: UCI protocol server for chess engine authors
 ##
 ## Quick Start
 ## ===========
