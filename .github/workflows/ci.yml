@@ -64,7 +64,16 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Nimble Test
+        shell: bash
+        run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
+
+      - name: Compile test
+        shell: bash
+        run: find . -name "*.nim" -print0 | xargs -n 1 -0 nimble c $1 -o:"compilertestbinary" && rm compilertestbinary
+
       - name: Code formatting
+        shell: bash
         run: |
           nimble install nph
           export PATH="$HOME/.nimble/bin:$PATH"
@@ -75,20 +84,3 @@ jobs:
             echo "::error::Code formatting check failed. Please run 'nph .' locally and commit the changes."
             exit 1
           fi
-        shell: bash
-
-      - name: Nimble Test
-        shell: bash
-        run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
-
-      - name: Compile test
-        shell: bash
-        run: find . -name "*.nim" -print0 | xargs -n 1 -0 nimble c $1 -o:"compilertestbinary" && rm compilertestbinary
-
-      # - name: Check formatting
-      #   shell: bash
-      #   run: |
-      #     nimble install nph
-      #     export PATH="$HOME/.nimble/bin:$PATH"
-      #     echo "nph version (make sure to use the same one): $(nph --version)"
-      #     nph --check ./
