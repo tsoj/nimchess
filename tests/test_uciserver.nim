@@ -2,7 +2,6 @@ import unittest, osproc, os
 import nimchess/[uciclient, movegen, strchess, move, game]
 import shared_engine_tests
 
-
 const fastchessBinPath {.strdefine.} = "fastchess"
 
 const randomEngineSrc =
@@ -21,7 +20,8 @@ runEngineTests(testEngine = randomEngineBin)
 
 suite "UCI Server - fastchess compliance":
   test "fastchess --compliance":
-    let (output, exitCode) = execCmdEx(fastchessBinPath & " --compliance " & randomEngineBin)
+    let (output, exitCode) =
+      execCmdEx(fastchessBinPath & " --compliance " & randomEngineBin)
     if exitCode != 0:
       echo output
     check exitCode == 0
