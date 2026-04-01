@@ -64,9 +64,9 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check formatting (nph)
+      - name: Check formatting
         shell: bash
-        run: nimble install nph && nph --check ./
+        run: nimble install nph && ./.nimble/bin/nph --check ./
 
       - name: Nimble Test
         shell: bash
