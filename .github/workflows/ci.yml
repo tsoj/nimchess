@@ -64,6 +64,10 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check formatting (nph)
+        shell: bash
+        run: nimble install nph && nph --check ./
+
       - name: Nimble Test
         shell: bash
         run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
