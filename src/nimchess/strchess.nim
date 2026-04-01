@@ -5,9 +5,6 @@ import std/[strutils, options, strformat]
 export move, position
 
 func fen*(position: Position, alwaysShowEnPassantSquare: bool = false): string =
-
-
-
   result = ""
   var emptySquareCounter = 0
   for rank in countdown(7, 0):
