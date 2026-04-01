@@ -1,5 +1,6 @@
 import unittest, options, tables, strutils
-import nimchess/[uciclient, movegen, position, strchess, move, types, game]
+import nimchess/[uciclient, position, types, strchess, movegen]
+import shared_engine_tests
 
 const testEngine {.strdefine.} = "stockfish"
 
@@ -236,7 +237,7 @@ suite "UCI Engine Unit Tests":
     check limit.nodes == 1000000
 
 # Shared tests that work with any UCI engine
-include shared_engine_tests
+runEngineTests(testEngine = testEngine)
 
 # Stockfish-specific tests
 suite "Stockfish-specific Tests":
@@ -462,7 +463,3 @@ suite "Stockfish-specific Tests":
       except CatchableError:
         discard
       fail()
-
-when isMainModule:
-  echo "Running UCI Engine Test Suite"
-  echo "=" & "=".repeat(50)

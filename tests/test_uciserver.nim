@@ -1,5 +1,6 @@
 import unittest, osproc, os
 import nimchess/[uciclient, movegen, strchess, move, game]
+import shared_engine_tests
 
 const randomEngineSrc =
   currentSourcePath().parentDir / ".." / "examples" / "randomengine.nim"
@@ -12,10 +13,8 @@ let (buildOutput, buildExitCode) = execCmdEx(
 )
 doAssert buildExitCode == 0, "Failed to build random engine:\n" & buildOutput
 
-const testEngine = randomEngineBin
-
 # Shared tests that work with any UCI engine
-include shared_engine_tests
+runEngineTests(testEngine = randomEngineBin)
 
 suite "UCI Server - fastchess compliance":
   test "fastchess --compliance":
