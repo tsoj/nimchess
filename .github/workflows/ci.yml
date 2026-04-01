@@ -64,14 +64,6 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check formatting (nph)
-        shell: bash
-        run: |
-          nimble install nph
-          export PATH="$HOME/.nimble/bin:$PATH"
-          nph --version
-          nph --check ./
-
       - name: Nimble Test
         shell: bash
         run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
@@ -79,3 +71,12 @@ jobs:
       - name: Compile test
         shell: bash
         run: find . -name "*.nim" -print0 | xargs -n 1 -0 nimble c $1 -o:"compilertestbinary" && rm compilertestbinary
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          nimble install nph
+          export PATH="$HOME/.nimble/bin:$PATH"
+          echo "nph version (make sure to use the same one):"
+          nph --version
+          nph --check ./

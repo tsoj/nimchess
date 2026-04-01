@@ -279,10 +279,9 @@ suite "UCI Engine Unit Tests":
     check engine.game.startPosition == startPos
 
     # Test setting position with moves
-    let moves =
-      @[
-        "e2e4".toMove(startPos), "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos)))
-      ]
+    let moves = @[
+      "e2e4".toMove(startPos), "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos)))
+    ]
     engine.setPosition(startPos, moves)
     check engine.game.moves.len == 2
     check engine.game.moves[0] == moves[0]
