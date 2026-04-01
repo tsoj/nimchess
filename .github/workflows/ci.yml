@@ -64,17 +64,17 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: nph
+      - name: Code formatting
         run: |
           nimble install nph
           export PATH="$HOME/.nimble/bin:$PATH"
           echo "nph version (make sure to use the same one): $(nph --version)"
           nph .
-        shell: bash
-
-      - name: View diff
-        run: |
-          git diff --exit-code || exit 1
+          if ! git diff --exit-code; then
+            echo ""
+            echo "::error::Code formatting check failed. Please run 'nph .' locally and commit the changes."
+            exit 1
+          fi
         shell: bash
 
       - name: Nimble Test
