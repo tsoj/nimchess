@@ -6,7 +6,7 @@ jobs:
       matrix:
         os:
           - windows-latest
-          # - macos-latest # TODO: fix macos tests
+          - macos-latest
           - ubuntu-latest
     name: ${{ matrix.os }} - ${{ matrix.nimversion }}
     runs-on: ${{ matrix.os }}
@@ -32,6 +32,12 @@ jobs:
               brew install stockfish
               ;;
           esac
+
+      - name: Install fastchess
+        shell: bash
+        run: |
+          .github/install-fastchess.sh fastchess-extract
+          echo "$PWD/fastchess-extract" >> "$GITHUB_PATH"
 
       # Non-Windows: resolve via PATH (works for apt/brew)
       - name: Resolve stockfish path (Linux/macOS)
@@ -65,6 +71,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Nimble Test
+        if: runner.os != 'macOS' # TODO: fix macos tests
         shell: bash
         run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
 
