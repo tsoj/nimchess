@@ -64,11 +64,13 @@ jobs:
           nimble-version: "latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check formatting
+      - name: Check formatting (nph)
         shell: bash
         run: |
           nimble install nph
-          $HOME/.nimble/bin/nph --check ./
+          export PATH="$HOME/.nimble/bin:$PATH"
+          nph --version
+          nph --check ./
 
       - name: Nimble Test
         shell: bash
