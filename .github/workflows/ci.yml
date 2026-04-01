@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           .github/install-fastchess.sh fastchess-extract
-          echo "$PWD/fastchess-extract" >> "$GITHUB_PATH"
+          echo "FASTCHESS=$PWD/fastchess-extract/fastchess" >> "$GITHUB_ENV"
 
       # Non-Windows: resolve via PATH (works for apt/brew)
       - name: Resolve stockfish path (Linux/macOS)
@@ -73,7 +73,7 @@ jobs:
       - name: Nimble Test
         if: runner.os != 'macOS' # TODO: fix macos tests
         shell: bash
-        run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE"
+        run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE" -d:fastchessBinPath="$FASTCHESS"
 
       - name: Compile test
         shell: bash
