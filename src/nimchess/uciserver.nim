@@ -28,8 +28,8 @@
 ##   )
 ##   server.uciLoop()
 
-import std/[strutils, atomics, options]
-import position, types, ucitypes, game, strchess, movegen
+import std/[strutils, atomics, options, times, strformat]
+import position, types, ucitypes, game, strchess, movegen, perft
 
 export ucitypes, game
 
@@ -236,6 +236,18 @@ proc go(server: var UciServer, params: seq[string]) =
     ),
   )
 
+proc runPerft(server: UciServer, params: seq[string]) =
+  if params.len >= 1:
+    let
+      start = epochTime()
+      nodes =
+        server.game.currentPosition.perft(params[0].parseInt, printRootMoveNodes = true)
+      s = epochTime() - start
+    sendInfoString fmt"{nodes} nodes in {s.float:0.3f} seconds"
+    sendInfoString fmt"{(nodes.float / s.float).int} nodes per second"
+  else:
+    sendInfoString "Missing depth parameter"
+
 # --- Help system ---
 
 const builtinHelp = [
@@ -259,6 +271,10 @@ const builtinHelp = [
   (
     "moves",
     "moves <m1> ... <mN> -- Play moves on the current position. Accepts UCI and SAN notation.",
+  ),
+  (
+    "perft",
+    "perft [depth] -- Run perft on the current position and print node counts per move.",
   ),
   ("help", "help [command] -- Show available commands or help for a specific command."),
 ]
@@ -368,6 +384,8 @@ proc uciLoop*(server: var UciServer) =
           server.playMoves(params[1 ..^ 1])
         except CatchableError:
           sendInfoString("Error: " & getCurrentExceptionMsg())
+      of "perft":
+        server.runPerft(params[1 ..^ 1])
       of "help":
         server.printHelp(params[1 ..^ 1])
       of "quit":
