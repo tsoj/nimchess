@@ -9,7 +9,7 @@ A fast and efficient chess library for Nim, with move generation and support for
 Add nimchess to your `.nimble` file:
 
 ```nim
-requires "nimchess >= 0.3.0"
+requires "nimchess >= 0.3.1"
 ```
 
 Or install directly:
@@ -88,6 +88,7 @@ var server = newUciServer(
   author = "Me",
   onGo = mySearch,
 )
+
 server.uciLoop()
 ```
 

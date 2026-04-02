@@ -23,8 +23,6 @@ nimchess: A fast and efficient chess library for Nim, with move generation and s
 └── tests/                # Test files named test_<modulename>.nim
 ```
 
-The public API is everything exported through `nimchess.nim`. `castling.nim` is internal and not exported.
-
 ## Dependencies
 
 No external Nim dependencies — only the Nim stdlib is used. Do not add third-party packages.
@@ -60,3 +58,7 @@ No external Nim dependencies — only the Nim stdlib is used. Do not add third-p
 Performance matters in the core move generation and bitboard paths (move.nim, movegen.nim, bitboard.nim, position.nim). In these areas, prefer efficient code and avoid unnecessary allocations.
 
 For non-hot-path code (FEN/PGN parsing, engine communication, string formatting), prefer simplicity and readability over performance-centric engineering. If fast performance comes naturally from simple code, great — but do not prematurely optimize these areas.
+
+## Updating this file (AGENTS.md)
+
+When changing this project in ways that are relevant to what is written here (e.g., module organization, types), be sure to update this file (AGENTS.md) accordingly.
