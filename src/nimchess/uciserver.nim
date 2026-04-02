@@ -138,6 +138,11 @@ proc stopSearch(server: var UciServer) =
     joinThread server.searchThread[]
   server.searchThread = nil
 
+proc finalize(server: var UciServer) =
+  server.stopSearch()
+  if server.onQuit != nil:
+    server.onQuit()
+
 proc uciCommand(server: UciServer) =
   echo "id name ", server.name
   echo "id author ", server.author
@@ -184,6 +189,17 @@ proc go(server: var UciServer, params: seq[string]) =
   var hasSearchMoves = false
 
   for i in 0 ..< params.len:
+    if params[i] == "ponder":
+      goParams.ponder = true
+      continue
+
+    try:
+      goParams.searchMoves.add params[i].toMove(server.game.currentPosition)
+      hasSearchMoves = true
+      continue
+    except CatchableError:
+      discard
+
     if i + 1 < params.len:
       try:
         case params[i]
@@ -204,19 +220,9 @@ proc go(server: var UciServer, params: seq[string]) =
         of "movestogo":
           goParams.limit.movesToGo = params[i + 1].parseInt
         else:
-          sendInfoString "Unknown parameters"
+          discard
       except ValueError:
-        sendInfoString "Unknown parameters"
-
-    case params[i]
-    of "ponder":
-      goParams.ponder = true
-    else:
-      try:
-        goParams.searchMoves.add params[i].toMove(server.game.currentPosition)
-        hasSearchMoves = true
-      except CatchableError:
-        sendInfoString "Unknown parameters"
+        raise newException(ValueError, fmt"ValueError for {params[i]}")
 
   if not hasSearchMoves:
     goParams.searchMoves = server.game.currentPosition.legalMoves
@@ -326,6 +332,91 @@ proc newUciServer*(
 
 # --- Main loop ---
 
+proc dispatchCommand(server: var UciServer, command: string): bool =
+  ## Dispatches a single command. Returns false if the server should quit.
+  result = true
+
+  let params = command.splitWhitespace()
+
+  if params.len == 0 or params[0] == "":
+    return
+
+  case params[0]
+  of "uci":
+    server.uciCommand()
+  of "isready":
+    echo "readyok"
+  of "setoption":
+    if server.onSetOption != nil and params.len >= 3 and params[1] == "name":
+      var nameEnd = params.len
+      var valueStart = -1
+      for i in 2 ..< params.len:
+        if params[i] == "value" and i + 1 < params.len:
+          nameEnd = i
+          valueStart = i + 1
+          break
+      let optName = params[2 ..< nameEnd].join(" ")
+      let optValue =
+        if valueStart >= 0:
+          params[valueStart ..^ 1].join(" ")
+        else:
+          ""
+      server.onSetOption(optName, optValue)
+  of "position":
+    server.setPosition(params[1 ..^ 1])
+  of "go":
+    server.go(params[1 ..^ 1])
+  of "stop":
+    server.stopSearch()
+  of "ucinewgame":
+    if server.searchRunning.load:
+      sendInfoString("Can't start new game while search is running")
+    else:
+      if server.onNewGame != nil:
+        server.onNewGame()
+  of "ponderhit":
+    discard
+  of "print":
+    if params.len >= 2 and params[1] == "debug":
+      echo server.game.currentPosition.debugString
+    else:
+      echo server.game.currentPosition
+  of "fen":
+    echo server.game.currentPosition.fen
+  of "moves":
+    try:
+      server.playMoves(params[1 ..^ 1])
+    except CatchableError:
+      sendInfoString("Error: " & getCurrentExceptionMsg())
+  of "perft":
+    server.runPerft(params[1 ..^ 1])
+  of "help":
+    server.printHelp(params[1 ..^ 1])
+  of "quit":
+    return false
+  else:
+    var handled = false
+    for cmd in server.customCommands:
+      if params[0] == cmd.name:
+        cmd.handler(server.game, params[1 ..^ 1])
+        handled = true
+        break
+
+    if not handled:
+      try:
+        server.playMoves(params)
+      except CatchableError:
+        try:
+          server.setPosition(@["fen"] & params)
+        except CatchableError:
+          sendInfoString("Unknown command: " & params[0])
+
+proc runCommand*(server: var UciServer, command: string) =
+  ## Processes a single UCI command string, then finalizes (stops search, calls onQuit).
+  ## Equivalent to running the uciLoop with the given command followed by ``quit``.
+  discard server.dispatchCommand(command)
+  server.finalize()
+
 proc uciLoop*(server: var UciServer) =
   ## Runs the main UCI protocol loop. Reads from stdin, dispatches commands,
   ## and runs the search handler in a separate thread. Blocks until ``quit``
@@ -334,87 +425,11 @@ proc uciLoop*(server: var UciServer) =
     try:
       let command = readLine(stdin)
       let params = command.splitWhitespace()
-      if params.len == 0 or params[0] == "":
-        continue
-
-      case params[0]
-      of "uci":
-        server.uciCommand()
-      of "isready":
-        echo "readyok"
-      of "setoption":
-        if server.onSetOption != nil and params.len >= 3 and params[1] == "name":
-          var nameEnd = params.len
-          var valueStart = -1
-          for i in 2 ..< params.len:
-            if params[i] == "value" and i + 1 < params.len:
-              nameEnd = i
-              valueStart = i + 1
-              break
-          let optName = params[2 ..< nameEnd].join(" ")
-          let optValue =
-            if valueStart >= 0:
-              params[valueStart ..^ 1].join(" ")
-            else:
-              ""
-          server.onSetOption(optName, optValue)
-      of "position":
-        server.setPosition(params[1 ..^ 1])
-      of "go":
-        server.go(params[1 ..^ 1])
-      of "stop":
-        server.stopSearch()
-      of "ucinewgame":
-        if server.searchRunning.load:
-          sendInfoString("Can't start new game while search is running")
-        else:
-          if server.onNewGame != nil:
-            server.onNewGame()
-      of "ponderhit":
-        discard
-      of "print":
-        if params.len >= 2 and params[1] == "debug":
-          echo server.game.currentPosition.debugString
-        else:
-          echo server.game.currentPosition
-      of "fen":
-        echo server.game.currentPosition.fen
-      of "moves":
-        try:
-          server.playMoves(params[1 ..^ 1])
-        except CatchableError:
-          sendInfoString("Error: " & getCurrentExceptionMsg())
-      of "perft":
-        server.runPerft(params[1 ..^ 1])
-      of "help":
-        server.printHelp(params[1 ..^ 1])
-      of "quit":
-        server.stopSearch()
-        if server.onQuit != nil:
-          server.onQuit()
+      if not server.dispatchCommand(command):
+        server.finalize()
         break
-      else:
-        # Check custom commands first
-        var handled = false
-        for cmd in server.customCommands:
-          if params[0] == cmd.name:
-            cmd.handler(server.game, params[1 ..^ 1])
-            handled = true
-            break
-
-        if not handled:
-          # Fallback: try parsing as moves, SAN moves, or FEN
-          try:
-            server.playMoves(params)
-          except CatchableError:
-            try:
-              server.setPosition(@["fen"] & params)
-            except CatchableError:
-              sendInfoString("Unknown command: " & params[0])
     except EOFError:
-      server.stopSearch()
-      if server.onQuit != nil:
-        server.onQuit()
+      server.finalize()
       break
     except CatchableError:
       sendInfoString("Error: " & getCurrentExceptionMsg())
