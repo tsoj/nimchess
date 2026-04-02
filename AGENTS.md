@@ -6,19 +6,21 @@ nimchess: A fast and efficient chess library for Nim, with move generation and s
 ```
 ├── src/
 │   ├── nimchess/
-│   │   ├── types.nim    # Fundamental chess types: Square, Color, Piece, ColoredPiece
-│   │   ├── bitboard.nim # Bitboard operations & attack tables
-│   │   ├── castling.nim # Castling validation & target squares (internal, not exported)
-│   │   ├── position.nim # Chess position state: piece placement, castling rights, en passant, side to move, move counters
-│   │   ├── move.nim     # Move encoding, `doMove`, `isLegal`
-│   │   ├── movegen.nim  # Move generation, `legalMoves`, `isMate`
-│   │   ├── strchess.nim # FEN, SAN, UCI parsing/formatting
-│   │   ├── game.nim     # Game representation & history
-│   │   ├── pgn.nim      # PGN file I/O
-│   │   ├── engine.nim   # UCI engine communication
-│   │   └── perft.nim    # Move generation verification
-│   └── nimchess.nim     # Main library export module
-└── tests/               # Test files named test_<modulename>.nim
+│   │   ├── types.nim     # Fundamental chess types: Square, Color, Piece, ColoredPiece
+│   │   ├── bitboard.nim  # Bitboard operations & attack tables
+│   │   ├── castling.nim  # Castling validation & target squares (internal, not exported)
+│   │   ├── position.nim  # Chess position state: piece placement, castling rights, en passant, side to move, move counters
+│   │   ├── move.nim      # Move encoding, `doMove`, `isLegal`
+│   │   ├── movegen.nim   # Move generation, `legalMoves`, `isMate`
+│   │   ├── strchess.nim  # FEN, SAN, UCI parsing/formatting
+│   │   ├── game.nim      # Game representation & history
+│   │   ├── pgn.nim       # PGN file I/O
+│   │   ├── ucitypes.nim  # Shared UCI types: Limit, Score, UciInfo, EngineOption
+│   │   ├── uciclient.nim # UCI chess engine communication and analysis
+│   │   ├── uciserver.nim # UCI protocol server for chess engine authors
+│   │   └── perft.nim     # Move generation verification
+│   └── nimchess.nim      # Main library export module
+└── tests/                # Test files named test_<modulename>.nim
 ```
 
 The public API is everything exported through `nimchess.nim`. `castling.nim` is internal and not exported.

@@ -9,7 +9,7 @@ A fast and efficient chess library for Nim, with move generation and support for
 Add nimchess to your `.nimble` file:
 
 ```nim
-requires "nimchess >= 0.2.5"
+requires "nimchess >= 0.3.0"
 ```
 
 Or install directly:
@@ -24,7 +24,8 @@ nimble install nimchess
 - FEN parsing and generation
 - PGN reading and writing with SAN notation support
 - Chess960 (Fischer Random) support
-- UCI chess engine communication and analysis
+- UCI chess engine communication and analysis (client)
+- UCI protocol server for implementing chess engines
 
 ## Quick Examples
 
@@ -64,13 +65,30 @@ echo game.headers["Black"]
 echo game.result
 ```
 
-### Engine Communication
+### Engine Communication (Client)
 
 ```nim
 # Communicate with UCI engines like Stockfish
 var engine = newUciEngine("stockfish")
 let result = engine.play(startPos, Limit(depth: 10))
 echo "Best move: ", result.move.toSAN(startPos)
+```
+
+### Engine Communication (Server)
+
+```nim
+# Implement a UCI chess engine
+proc mySearch(params: GoParams) {.nimcall, gcsafe.} =
+  let position = params.game.currentPosition
+  # ... perform search, checking params.stopFlag[] periodically ...
+  sendBestMove(bestMove, position)
+
+var server = newUciServer(
+  name = "MyEngine 1.0",
+  author = "Me",
+  onGo = mySearch,
+)
+server.uciLoop()
 ```
 
 ## Requirements
