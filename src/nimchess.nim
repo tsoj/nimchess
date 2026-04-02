@@ -1,11 +1,11 @@
 import
   nimchess/[
-    bitboard, uciclient, game, move, movegen, pgn, position, strchess, types, ucitypes,
-    uciserver,
+    bitboard, uciclient, game, move, movegen, pgn, position, strchess, types, perft,
+    ucitypes, uciserver,
   ]
 export
-  bitboard, uciclient, game, move, movegen, pgn, position, strchess, types, ucitypes,
-  uciserver
+  bitboard, uciclient, game, move, movegen, pgn, position, strchess, types, perft,
+  ucitypes, uciserver
 ## ========
 ## nimchess
 ## ========
