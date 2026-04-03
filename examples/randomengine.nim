@@ -13,8 +13,8 @@ proc search(params: GoParams) {.nimcall, gcsafe.} =
   # Determine how long to "think"
   var thinkTimeSeconds = 0.0
 
-  if params.limit.movetimeSeconds < float.high:
-    thinkTimeSeconds = params.limit.movetimeSeconds
+  if params.limit.movetimeSeconds.isSome:
+    thinkTimeSeconds = params.limit.movetimeSeconds.get
   else:
     # Use time control: assume 30 moves remaining
     const assumedMovesRemaining = 30
@@ -25,10 +25,7 @@ proc search(params: GoParams) {.nimcall, gcsafe.} =
         assumedMovesRemaining
 
     let (timeLeft, inc) =
-      if position.us == white:
-        (params.limit.whiteTimeSeconds, params.limit.whiteIncSeconds)
-      else:
-        (params.limit.blackTimeSeconds, params.limit.blackIncSeconds)
+      (params.limit.timeSeconds[position.us], params.limit.incSeconds[position.us])
 
     if timeLeft < float.high:
       thinkTimeSeconds = timeLeft / movesToGo.float + inc

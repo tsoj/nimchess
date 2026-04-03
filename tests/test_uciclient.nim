@@ -223,16 +223,16 @@ suite "UCI Engine Unit Tests":
     check scores[1] >= scores[1]
 
   test "Limit creation":
-    let timeLimit = Limit(movetimeSeconds: 5.0)
-    check timeLimit.movetimeSeconds == 5.0
+    let timeLimit = Limit(movetimeSeconds: some(5.0))
+    check timeLimit.movetimeSeconds == some(5.0)
     check timeLimit.depth == int.high
     let depthLimit = Limit(depth: 10)
     check depthLimit.depth == 10
-    check depthLimit.movetimeSeconds == float.high
+    check depthLimit.movetimeSeconds.isNone
 
   test "Limit with multiple constraints":
-    let limit = Limit(movetimeSeconds: 2.5, depth: 12, nodes: 1000000)
-    check limit.movetimeSeconds == 2.5
+    let limit = Limit(movetimeSeconds: some(2.5), depth: 12, nodes: 1000000)
+    check limit.movetimeSeconds == some(2.5)
     check limit.depth == 12
     check limit.nodes == 1000000
 

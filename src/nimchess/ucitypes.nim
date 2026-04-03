@@ -1,5 +1,5 @@
 import std/[options, tables]
-import move
+import types, move
 
 type
   EngineOptionType* = enum
@@ -28,13 +28,11 @@ type
       defaultString*: string
 
   Limit* = object ## Search limit parameters
-    movetimeSeconds*: float = float.high ## Search exactly this many seconds
+    movetimeSeconds*: Option[float] ## Search exactly this many seconds
     depth*: int = int.high ## Search to this depth only
     nodes*: int = int.high ## Search only this many nodes
-    whiteTimeSeconds*: float = float.high ## Time remaining for white (seconds)
-    blackTimeSeconds*: float = float.high ## Time remaining for black (seconds)
-    whiteIncSeconds*: float = 0.0 ## White increment per move (seconds)
-    blackIncSeconds*: float = 0.0 ## Black increment per move (seconds)
+    timeSeconds*: array[white .. black, float] = [float.high, float.high] ## Time remaining per color (seconds)
+    incSeconds*: array[white .. black, float] = [0.0, 0.0] ## Increment per move per color (seconds)
     movesToGo*: int = int.high ## Moves until next time control
 
   ScoreKind* = enum

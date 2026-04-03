@@ -1,3 +1,4 @@
+import std/options
 import unittest
 import nimchess/[uciclient, strchess, game]
 
@@ -98,7 +99,7 @@ proc runEngineTests*(testEngine: string) =
         let startPos = classicalStartPos
         engine.setPosition(startPos)
 
-        let limit = Limit(movetimeSeconds: 0.1)
+        let limit = Limit(movetimeSeconds: some(0.1))
         let result = engine.go(limit)
 
         check not result.move.isNoMove
@@ -116,7 +117,7 @@ proc runEngineTests*(testEngine: string) =
         let startPos = classicalStartPos
         engine.setPosition(startPos)
 
-        let limit = Limit(movetimeSeconds: 0.1)
+        let limit = Limit(movetimeSeconds: some(0.1))
         let result = engine.go(limit)
 
         check not result.move.isNoMove
@@ -137,7 +138,7 @@ proc runEngineTests*(testEngine: string) =
         let startPos = classicalStartPos
         engine.setPosition(startPos)
 
-        let limit = Limit(movetimeSeconds: 0.1)
+        let limit = Limit(movetimeSeconds: some(0.1))
         let result = engine.go(limit)
 
         check not result.move.isNoMove
@@ -154,7 +155,7 @@ proc runEngineTests*(testEngine: string) =
         var engine = newUciEngine(testEngine)
 
         let startPos = classicalStartPos
-        let limit = Limit(movetimeSeconds: 0.1)
+        let limit = Limit(movetimeSeconds: some(0.1))
 
         let result = engine.play(startPos, limit)
 
@@ -173,7 +174,7 @@ proc runEngineTests*(testEngine: string) =
         ]:
           let pos = fen.toPosition
           engine.setPosition(pos)
-          let result = engine.go(Limit(movetimeSeconds: 0.1))
+          let result = engine.go(Limit(movetimeSeconds: some(0.1)))
           check not result.move.isNoMove
           check pos.isLegal(result.move)
 
@@ -207,7 +208,7 @@ proc runEngineTests*(testEngine: string) =
         var engineB = ensureMove engineA
         check engineB.initialized
 
-        let result = engineB.play(classicalStartPos, Limit(movetimeSeconds: 0.1))
+        let result = engineB.play(classicalStartPos, Limit(movetimeSeconds: some(0.1)))
         check not result.move.isNoMove
 
       stuff()

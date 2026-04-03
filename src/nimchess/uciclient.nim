@@ -322,23 +322,23 @@ proc go*(engine: var UciEngine, limit: Limit): PlayResult =
   ## Uses the previously set position state of the engine.
   var cmd = "go"
 
-  if limit.movetimeSeconds < limit.movetimeSeconds.typeof.high:
-    cmd.add(" movetime " & $(int(limit.movetimeSeconds * 1000)))
+  if limit.movetimeSeconds.isSome:
+    cmd.add(" movetime " & $(int(limit.movetimeSeconds.get * 1000)))
 
   if limit.depth < limit.depth.typeof.high:
     cmd.add(" depth " & $limit.depth)
   if limit.nodes < limit.nodes.typeof.high:
     cmd.add(" nodes " & $limit.nodes)
 
-  if limit.whiteTimeSeconds < limit.whiteTimeSeconds.typeof.high:
-    cmd.add(" wtime " & $(int(limit.whiteTimeSeconds * 1000)))
-  if limit.blackTimeSeconds < limit.blackTimeSeconds.typeof.high:
-    cmd.add(" btime " & $(int(limit.blackTimeSeconds * 1000)))
+  if limit.timeSeconds[white] < float.high:
+    cmd.add(" wtime " & $(int(limit.timeSeconds[white] * 1000)))
+  if limit.timeSeconds[black] < float.high:
+    cmd.add(" btime " & $(int(limit.timeSeconds[black] * 1000)))
 
-  if limit.whiteIncSeconds != 0.0:
-    cmd.add(" winc " & $(int(limit.whiteIncSeconds * 1000)))
-  if limit.blackIncSeconds != 0.0:
-    cmd.add(" binc " & $(int(limit.blackIncSeconds * 1000)))
+  if limit.incSeconds[white] != 0.0:
+    cmd.add(" winc " & $(int(limit.incSeconds[white] * 1000)))
+  if limit.incSeconds[black] != 0.0:
+    cmd.add(" binc " & $(int(limit.incSeconds[black] * 1000)))
 
   if limit.movesToGo < limit.movesToGo.typeof.high:
     cmd.add(" movestogo " & $limit.movesToGo)

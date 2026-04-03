@@ -208,15 +208,15 @@ proc go(server: var UciServer, params: seq[string]) =
         of "nodes":
           goParams.limit.nodes = params[i + 1].parseInt
         of "movetime":
-          goParams.limit.movetimeSeconds = params[i + 1].parseFloat / 1000.0
+          goParams.limit.movetimeSeconds = some(params[i + 1].parseFloat / 1000.0)
         of "wtime":
-          goParams.limit.whiteTimeSeconds = params[i + 1].parseFloat / 1000.0
+          goParams.limit.timeSeconds[white] = params[i + 1].parseFloat / 1000.0
         of "btime":
-          goParams.limit.blackTimeSeconds = params[i + 1].parseFloat / 1000.0
+          goParams.limit.timeSeconds[black] = params[i + 1].parseFloat / 1000.0
         of "winc":
-          goParams.limit.whiteIncSeconds = params[i + 1].parseFloat / 1000.0
+          goParams.limit.incSeconds[white] = params[i + 1].parseFloat / 1000.0
         of "binc":
-          goParams.limit.blackIncSeconds = params[i + 1].parseFloat / 1000.0
+          goParams.limit.incSeconds[black] = params[i + 1].parseFloat / 1000.0
         of "movestogo":
           goParams.limit.movesToGo = params[i + 1].parseInt
         else:
@@ -424,7 +424,6 @@ proc uciLoop*(server: var UciServer) =
   while true:
     try:
       let command = readLine(stdin)
-      let params = command.splitWhitespace()
       if not server.dispatchCommand(command):
         server.finalize()
         break
