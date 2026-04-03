@@ -58,7 +58,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = Get-ChildItem 'C:\Program Files\ChessEngines' -Recurse -Filter 'stockfish*.exe' |
+          $exe = Get-ChildItem 'C:\Program Files\ChessEngines' -Recurse -Filter 'stockfish*.exe' -ErrorAction SilentlyContinue |
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $exe) { throw "Stockfish exe not found under C:\Program Files\ChessEngines" }
           "TEST_ENGINE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
