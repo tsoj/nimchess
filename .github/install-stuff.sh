@@ -63,7 +63,8 @@ extract() {
 
 # ── fastchess ──────────────────────────────────────────────────────────────
 echo "Downloading fastchess"
-FC_ARCHIVE="$(mktemp)"
+FC_EXT="${FC_URL##*.}"
+FC_ARCHIVE="$(mktemp).${FC_EXT}"
 curl -sL -o "$FC_ARCHIVE" "$FC_URL"
 sha256check "$FC_ARCHIVE" "$FC_SHA"
 
