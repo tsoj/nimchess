@@ -109,7 +109,7 @@ case "$OS" in
 
     # Rename to extensionless for consistency with Linux/macOS
     SF_EXE="$(find "$STOCKFISH_DIR" -name 'stockfish*.exe' | head -1)"
-    STOCKFISH_BIN="$STOCKFISH_DIR/stockfish"
+    STOCKFISH_BIN="$PWD/$STOCKFISH_DIR/stockfish"
     mv "$SF_EXE" "$STOCKFISH_BIN"
     chmod +x "$STOCKFISH_BIN"
     ;;
@@ -119,5 +119,5 @@ echo "stockfish installed: $STOCKFISH_BIN"
 # ── Export paths for CI ────────────────────────────────────────────────────
 if [[ -n "${GITHUB_ENV:-}" ]]; then
   echo "FASTCHESS=$PWD/$FASTCHESS_DIR/fastchess" >> "$GITHUB_ENV"
-  echo "TEST_ENGINE=$PWD/$STOCKFISH_BIN" >> "$GITHUB_ENV"
+  echo "TEST_ENGINE=$STOCKFISH_BIN" >> "$GITHUB_ENV"
 fi
