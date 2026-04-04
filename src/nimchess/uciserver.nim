@@ -8,18 +8,18 @@
 ## The search handler runs in a separate thread and must:
 ## - Check ``stopFlag`` periodically and stop when it becomes true
 ## - Call ``sendUciInfo`` to report search progress
-## - Call ``sendBestMove`` when the search is complete
+## - Return the best move found (the server sends ``bestmove`` automatically)
 ##
 ## Example:
 ##
 ## .. code-block:: nim
 ##   import nimchess/uciserver
 ##
-##   proc mySearch(params: GoParams) {.nimcall, gcsafe.} =
+##   proc mySearch(params: GoParams): Move {.nimcall, gcsafe.} =
 ##     let position = params.game.currentPosition
 ##     # ... perform search, checking params.stopFlag[] periodically ...
 ##
-##     sendBestMove(bestMove, position)
+##     return bestMove
 ##
 ##   var server = newUciServer(
 ##     name = "MyEngine 1.0",
@@ -41,9 +41,9 @@ type
     ponder*: bool ## Pondering mode
     stopFlag*: ptr Atomic[bool] ## Check periodically; stop searching when true
 
-  SearchHandler* = proc(params: GoParams) {.nimcall, gcsafe.}
+  SearchHandler* = proc(params: GoParams): Move {.nimcall, gcsafe.}
     ## Search handler that runs in a separate thread.
-    ## Must call ``sendBestMove`` when the search is complete.
+    ## Returns the best move found. The server calls ``sendBestMove`` automatically.
 
   SetOptionHandler* = proc(name, value: string)
     ## Called when the GUI sends ``setoption name <name> value <value>``.
@@ -129,7 +129,8 @@ proc sendInfoString*(s: string) =
 
 proc runSearchThread(input: SearchThreadInput) {.thread, nimcall.} =
   input.searchRunningFlag[].store(true)
-  input.handler(input.params)
+  let bestMove = input.handler(input.params)
+  sendBestMove(bestMove, input.params.game.currentPosition)
   input.searchRunningFlag[].store(false)
 
 proc stopSearch(server: var UciServer) =

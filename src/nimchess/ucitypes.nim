@@ -31,8 +31,10 @@ type
     movetimeSeconds*: Option[float] ## Search exactly this many seconds
     depth*: int = int.high ## Search to this depth only
     nodes*: int = int.high ## Search only this many nodes
-    timeSeconds*: array[white .. black, float] = [float.high, float.high] ## Time remaining per color (seconds)
-    incSeconds*: array[white .. black, float] = [0.0, 0.0] ## Increment per move per color (seconds)
+    timeSeconds*: array[white .. black, float] = [float.high, float.high]
+      ## Time remaining per color (seconds)
+    incSeconds*: array[white .. black, float] = [0.0, 0.0]
+      ## Increment per move per color (seconds)
     movesToGo*: int = int.high ## Moves until next time control
 
   ScoreKind* = enum
