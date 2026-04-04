@@ -53,18 +53,22 @@ sha256check() {
 extract() {
   local archive="$1" dest="$2"
   if [[ "$archive" == *.zip ]]; then
+    echo "archive zip: $archive"
     unzip -o "$archive" -d "$dest"
   else
+    echo "archive tar: $archive"
     tar xf "$archive" -C "$dest"
   fi
 }
 
 # ── fastchess ──────────────────────────────────────────────────────────────
+echo "Downloading fastchess"
 FC_ARCHIVE="$(mktemp)"
 curl -sL -o "$FC_ARCHIVE" "$FC_URL"
 sha256check "$FC_ARCHIVE" "$FC_SHA"
 
 FC_TMPDIR="$(mktemp -d)"
+echo "FC_ARCHIVE: $FC_ARCHIVE"
 extract "$FC_ARCHIVE" "$FC_TMPDIR"
 rm -f "$FC_ARCHIVE"
 
