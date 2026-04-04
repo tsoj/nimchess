@@ -95,7 +95,7 @@ case "$OS" in
     STOCKFISH_BIN="$(command -v stockfish)"
     ;;
   windows)
-    SF_URL="https://github.com/official-stockfish/Stockfish/releases/download/sf_17.1/stockfish-windows-x86-64-avx2.zip"
+    SF_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-windows-x86-64.zip"
     SF_ARCHIVE="$(mktemp)"
     curl -sL -o "$SF_ARCHIVE" "$SF_URL"
 
@@ -119,5 +119,5 @@ echo "stockfish installed: $STOCKFISH_BIN"
 # ── Export paths for CI ────────────────────────────────────────────────────
 if [[ -n "${GITHUB_ENV:-}" ]]; then
   echo "FASTCHESS=$PWD/$FASTCHESS_DIR/fastchess" >> "$GITHUB_ENV"
-  echo "TEST_ENGINE=$STOCKFISH_BIN" >> "$GITHUB_ENV"
+  echo "TEST_ENGINE=$PWD/$STOCKFISH_BIN" >> "$GITHUB_ENV"
 fi
