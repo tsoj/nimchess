@@ -1,12 +1,11 @@
 import std/[random, os, atomics, options]
 import nimchess/[uciserver, movegen, position, types]
 
-proc search(params: GoParams) {.nimcall, gcsafe.} =
+proc searchHandler(params: GoParams): Move {.nimcall, gcsafe.} =
   let position = params.game.currentPosition
 
   if params.searchMoves.len == 0:
-    sendBestMove(noMove, position)
-    return
+    return noMove
 
   let bestMove = params.searchMoves[rand(params.searchMoves.len - 1)]
 
@@ -45,7 +44,9 @@ proc search(params: GoParams) {.nimcall, gcsafe.} =
     ),
     position,
   )
-  sendBestMove(bestMove, position)
 
-var server = newUciServer(name = "RandomEngine", author = "nimchess", onGo = search)
+  bestMove
+
+var server =
+  newUciServer(name = "RandomEngine", author = "nimchess", onGo = searchHandler)
 server.uciLoop()
