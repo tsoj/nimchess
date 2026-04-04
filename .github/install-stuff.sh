@@ -95,7 +95,7 @@ case "$OS" in
     STOCKFISH_BIN="$(command -v stockfish)"
     ;;
   windows)
-    SF_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-windows-x86-64.zip"
+    SF_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-windows-x86-64-avx2.zip"
     SF_ARCHIVE="$(mktemp)"
     curl -sL -o "$SF_ARCHIVE" "$SF_URL"
 
