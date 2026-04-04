@@ -15,54 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: Install Stockfish
+      - name: Install stockfish and fastchess
         shell: bash
-        run: |
-          set -euo pipefail
-          case "$RUNNER_OS" in
-            Linux)
-              sudo apt-get update
-              sudo apt-get install -y stockfish
-              ;;
-            Windows)
-              choco install -y stockfish
-              ;;
-            macOS)
-              brew update
-              brew install stockfish
-              ;;
-          esac
-
-      - name: Install fastchess
-        shell: bash
-        run: |
-          .github/install-fastchess.sh fastchess-extract
-          echo "FASTCHESS=$PWD/fastchess-extract/fastchess" >> "$GITHUB_ENV"
-
-      # Non-Windows: resolve via PATH (works for apt/brew)
-      - name: Resolve stockfish path (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-          STOCKFISH_BIN="$(command -v stockfish || true)"
-          if [[ -z "$STOCKFISH_BIN" ]]; then
-            echo "Stockfish not found on PATH" >&2
-            exit 1
-          fi
-          echo "TEST_ENGINE=$STOCKFISH_BIN" >> "$GITHUB_ENV"
-          echo "Using stockfish at: $STOCKFISH_BIN"
-
-      # Windows: find the exe installed by Chocolatey (no shim), no version hardcoding
-      - name: Resolve stockfish path (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $exe = Get-ChildItem 'C:\Program Files\ChessEngines' -Recurse -Filter 'stockfish*.exe' -ErrorAction SilentlyContinue |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if (-not $exe) { throw "Stockfish exe not found under C:\Program Files\ChessEngines" }
-          "TEST_ENGINE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Using stockfish at: $($exe.FullName)"
+        run: .github/install-stuff.sh fastchess-extract stockfish-extract
 
       - name: Setup Nimble
         uses: nim-lang/setup-nimble-action@d27cc947821b39107883efa4a65f890a12d7d7d8

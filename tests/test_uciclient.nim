@@ -307,7 +307,7 @@ suite "Stockfish-specific Tests":
       let startPos = classicalStartPos
       engine.setPosition(startPos)
 
-      let limit = Limit(movetimeSeconds: 0.5)
+      let limit = Limit(movetimeSeconds: some 0.5)
       let result = engine.go(limit)
 
       let hasNodes = result.info.nodes.isSome
@@ -442,7 +442,7 @@ suite "Stockfish-specific Tests":
       let startPos = classicalStartPos
       engine.setPosition(startPos)
 
-      let limit = Limit(movetimeSeconds: 1.0)
+      let limit = Limit(movetimeSeconds: some 1.0)
       let result = engine.go(limit)
 
       check not result.move.isNoMove
