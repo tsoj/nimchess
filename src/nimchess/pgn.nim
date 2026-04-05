@@ -36,32 +36,56 @@ proc parseHeaders(stream: Stream): Table[string, string] =
 
     result[key] = value
 
-func isInComment(x: Table[char, int]): bool =
-  x['{'] > 0 or x['('] > 0
+type CommentState = object
+  comments: seq[string]
+  closeChars: seq[char]
 
-# Helper function to clean a line of comments
-proc cleanLineOfComments(line: string, commentDepth: var Table[char, int]): string =
+func isInComment(state: var CommentState): bool =
+  state.closeChars.len > 0
+
+proc cleanLineOfComments(line: string, state: var CommentState): string =
   result = ""
 
-  for c in line:
-    let d = {'}': '{', ')': '('}.toTable.getOrDefault(c, 'x')
+  template finalizeComment() =
+    state.comments[^1] = state.comments[^1].strip()
+    result.add fmt" $${state.comments.len - 1} "
 
-    if c == ';' and not commentDepth.isInComment:
-      # Rest of line is comment
-      break
-    elif c in commentDepth:
-      commentDepth[c] += 1
-    elif d in commentDepth and commentDepth[d] > 0:
-      commentDepth[d] -= 1
-    elif not commentDepth.isInComment:
-      result.add(c)
+  if state.isInComment:
+    state.comments[^1].add ' '
 
-proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
+  for i, c in line:
+    if state.isInComment:
+      if c == state.closeChars[^1]:
+        state.closeChars.setLen(state.closeChars.len - 1)
+        if state.closeChars.len == 0:
+          finalizeComment()
+      else:
+        if state.closeChars[^1] == ')' and c == '(': # to support parsing RAV
+          state.closeChars.add ')'
+        doAssert state.comments.len > 0
+        state.comments[^1].add c
+    else:
+      if c == ';':
+        let rest = line[i + 1 ..^ 1]
+        if rest.len > 0:
+          state.comments.add rest
+          finalizeComment()
+        break
+      elif c in ['(', '{']:
+        state.comments.add ""
+        state.closeChars.add(if c == '(': ')' else: '}')
+      else:
+        result.add c
+
+proc parseMoveText(
+    stream: Stream, startPos: Position
+): (seq[tuple[move: Move, annotation: string]], string, string) =
+  ## Returns (annotated moves, game result, pre-move comment)
   var
-    moves: seq[Move] = @[]
+    annotatedMoves: seq[tuple[move: Move, annotation: string]] = @[]
     position = startPos
     content = ""
-    commentDepth = {'{': 0, '(': 0}.toTable
+    commentState: CommentState
     gameResult = none string
 
   const resultTokens = ["1-0", "0-1", "1/2-1/2", "*"]
@@ -71,11 +95,11 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
     let currentPos = stream.getPosition()
     let line = stream.readLine()
 
-    # Clean the line of comments first
-    let cleanLine = cleanLineOfComments(line, commentDepth).strip()
+    # Clean the line of comments first, capturing comment text
+    let cleanLine = cleanLineOfComments(line, commentState).strip()
 
     # If we hit a line starting with [, it's the next game's headers (only check if not in comment)
-    if not commentDepth.isInComment and cleanLine.startsWith("["):
+    if not commentState.isInComment and cleanLine.startsWith("["):
       # Put the line back by seeking to its start
       stream.setPosition(currentPos)
       break
@@ -95,17 +119,33 @@ proc parseMoveText(stream: Stream, startPos: Position): (seq[Move], string) =
   # Split into tokens
   let tokens = content.split().filterIt(it.len > 0)
 
+  var preMoveComment = ""
+
+  template appendComment(target: var string, comment: string) =
+    if target.len > 0:
+      target.add(" ")
+    target.add(comment)
+
   for token in tokens:
+    # Handle $$<n> comment markers
+    if token.startsWith("$$"):
+      let comment = commentState.comments[parseInt(token[2 ..^ 1])]
+      if annotatedMoves.len > 0:
+        annotatedMoves[^1].annotation.appendComment(comment)
+      else:
+        preMoveComment.appendComment(comment)
+      continue
+
     # Skip empty tokens or pure numbers or special $ markers
     if token.len == 0 or token.allIt(it.isDigit()) or token in resultTokens or
         token.startsWith("$"):
       continue
 
     let move = toMove(token, position)
-    moves.add(move)
+    annotatedMoves.add((move: move, annotation: ""))
     position = position.doMove(move, allowNullMove = true)
 
-  return (moves, gameResult.get(otherwise = "*"))
+  return (annotatedMoves, gameResult.get(otherwise = "*"), preMoveComment)
 
 proc readSingleGameFromPgn(stream: Stream): Game =
   if stream.atEnd():
@@ -120,10 +160,24 @@ proc readSingleGameFromPgn(stream: Stream): Game =
     else:
       toPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
-  let (moves, gameResult) = parseMoveText(stream, startPos)
+  let (annotatedMoves, gameResult, preMoveComment) = parseMoveText(stream, startPos)
 
-  result =
-    Game(headers: headers, moves: moves, startPosition: startPos, result: gameResult)
+  var finalHeaders = headers
+  if preMoveComment.len > 0:
+    var key = "PreMoveComment"
+    if key in finalHeaders:
+      var n = 1
+      while key & $n in finalHeaders:
+        n += 1
+      key = key & $n
+    finalHeaders[key] = preMoveComment
+
+  result = Game(
+    headers: finalHeaders,
+    annotatedMoves: annotatedMoves,
+    startPosition: startPos,
+    result: gameResult,
+  )
 
 iterator readPgnFromStreamIter*(stream: Stream, suppressWarnings = false): Game =
   var lastGoodPosition = 0
@@ -207,27 +261,34 @@ func toPgnString*(game: Game): string =
   if position.us == black:
     result &= fmt"{position.currentFullmoveNumber}... "
 
-  for i, move in game.moves:
+  for i, am in game.annotatedMoves:
     # Add move number for white moves
     if position.us == white:
       result &= fmt"{position.currentFullmoveNumber}. "
 
     # Add the move in SAN notation
-    result &= move.toSAN(position)
+    result &= am.move.toSAN(position)
+
+    # Add annotation as comment if present
+    if am.annotation.len > 0:
+      if '}' in am.annotation:
+        result &= " (" & am.annotation & ")"
+      else:
+        result &= " {" & am.annotation & "}"
 
     # Add space after move (except for last move)
-    if i < game.moves.len - 1:
+    if i < game.annotatedMoves.len - 1:
       result &= " "
 
     # Add line break every few moves for readability
     if i mod 16 == 15: # Line break every 8 move pairs
       result &= "\n"
 
-    position = position.doMove(move, allowNullMove = true)
+    position = position.doMove(am.move, allowNullMove = true)
 
   # Add result
   if game.result != "":
-    if game.moves.len > 0:
+    if game.annotatedMoves.len > 0:
       result &= " "
     result &= game.result
 

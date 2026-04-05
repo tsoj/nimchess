@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-PGN to FEN Extractor using python-chess
+PGN to FEN/Annotation Extractor using python-chess
 
-This script processes all *.pgn files in the current directory and extracts
-all positions as FEN strings, writing them to corresponding *.epd files.
-Useful for validating custom PGN parsers by comparing the extracted positions.
+This script processes all *.pgn files in the current directory and extracts:
+1. All positions as FEN strings → *.epd files
+2. All per-move annotations → *.annotations files
 
 Usage:
-    python pgn_fen_extractor.py [--no-starting-position]
+    python create_epd_tests.py [--no-starting-position]
 """
 
 import chess
@@ -18,19 +18,21 @@ from pathlib import Path
 import glob
 
 
-def extract_fens_from_pgn(pgn_file_path, output_file_path, include_starting_position=True):
+def extract_from_pgn(pgn_file_path, epd_file_path, annotations_file_path, include_starting_position=True):
     """
-    Extract all FEN positions from a PGN file and write them to a text file.
+    Extract FEN positions and annotations from a PGN file.
 
     Args:
         pgn_file_path (str): Path to the input PGN file
-        output_file_path (str): Path to the output FEN file
+        epd_file_path (str): Path to the output FEN file
+        annotations_file_path (str): Path to the output annotations file
         include_starting_position (bool): Whether to include the starting position FEN
     """
 
     try:
         with open(pgn_file_path, 'r', encoding='utf-8') as pgn_file:
-            with open(output_file_path, 'w', encoding='utf-8') as fen_file:
+            with open(epd_file_path, 'w', encoding='utf-8') as fen_file, \
+                 open(annotations_file_path, 'w', encoding='utf-8') as ann_file:
                 game_count = 0
                 total_positions = 0
 
@@ -52,15 +54,25 @@ def extract_fens_from_pgn(pgn_file_path, output_file_path, include_starting_posi
                         fen_file.write(board.fen() + '\n')
                         total_positions += 1
 
+                    # Write pre-move comment (game-level comment)
+                    pre_move_comment = " ".join((game.comment or "").split())
+                    ann_file.write(f"game {game_count} pre-move: {pre_move_comment}\n")
+
                     # Iterate through all moves in the game
-                    for move in game.mainline_moves():
-                        board.push(move)
+                    for i, node in enumerate(game.mainline()):
+                        board.push(node.move)
                         fen_file.write(board.fen() + '\n')
                         total_positions += 1
 
+                        # Extract annotation (comment after this move)
+                        # Normalize whitespace (newlines → spaces) for line-based format
+                        comment = " ".join((node.comment or "").split())
+                        ann_file.write(f"game {game_count} move {i}: {comment}\n")
+
                 print(f"Completed processing {game_count} games.")
                 print(f"Total positions extracted: {total_positions}")
-                print(f"FEN positions written to: {output_file_path}")
+                print(f"FEN positions written to: {epd_file_path}")
+                print(f"Annotations written to: {annotations_file_path}")
 
     except FileNotFoundError:
         print(f"Error: Could not find PGN file '{pgn_file_path}'")
@@ -75,12 +87,12 @@ def extract_fens_from_pgn(pgn_file_path, output_file_path, include_starting_posi
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract FEN positions from all *.pgn files in current directory",
+        description="Extract FEN positions and annotations from all *.pgn files in current directory",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python pgn_fen_extractor.py
-    python pgn_fen_extractor.py --no-starting-position
+    python create_epd_tests.py
+    python create_epd_tests.py --no-starting-position
         """
     )
 
@@ -105,11 +117,12 @@ Examples:
     include_starting = not args.no_starting_position
 
     for pgn_file in pgn_files:
-        # Generate corresponding EPD filename
+        # Generate corresponding output filenames
         epd_file = Path(pgn_file).with_suffix('.epd')
+        ann_file = Path(pgn_file).with_suffix('.annotations')
 
-        print(f"\nProcessing: {pgn_file} -> {epd_file}")
-        extract_fens_from_pgn(pgn_file, str(epd_file), include_starting)
+        print(f"\nProcessing: {pgn_file} -> {epd_file}, {ann_file}")
+        extract_from_pgn(pgn_file, str(epd_file), str(ann_file), include_starting)
 
 
 if __name__ == "__main__":

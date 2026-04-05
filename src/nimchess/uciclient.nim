@@ -58,7 +58,7 @@ proc internalQuit*(engine: var UciEngine) =
       discard engine.process.waitForExit(timeout = 1000)
       doAssert not engine.process.running
       engine.process.close()
-    except IOError, OSError:
+    except IOError, OSError, ValueError:
       discard # Ignore errors during process cleanup
   else:
     doAssert engine.process == nil

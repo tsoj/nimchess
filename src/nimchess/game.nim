@@ -6,14 +6,18 @@ export tables
 
 type Game* = object
   headers*: Table[string, string]
-  moves*: seq[Move]
+  annotatedMoves*: seq[tuple[move: Move, annotation: string]]
   startPosition*: Position = classicalStartPos
   result*: string = "*"
 
+func moves*(game: Game): seq[Move] =
+  for am in game.annotatedMoves:
+    result.add am.move
+
 func positions*(game: Game): seq[Position] =
   result = @[game.startPosition]
-  for move in game.moves:
-    result.add result[^1].doMove(move)
+  for am in game.annotatedMoves:
+    result.add result[^1].doMove(am.move)
 
 func currentPosition*(game: Game): Position =
   ## Get the current position after all moves have been played
@@ -153,7 +157,7 @@ proc newGame*(
 
   result.applyResult
 
-func addMove*(game: var Game, move: Move) =
+func addMove*(game: var Game, move: Move, annotation: string = "") =
   ## Add a move to the game. Raises ValueError if the move is not legal.
   ## Updates the result if the game ends in mate or stalemate.
   let currentPos = game.currentPosition()
@@ -161,9 +165,9 @@ func addMove*(game: var Game, move: Move) =
   if not currentPos.isLegal(move):
     raise newException(ValueError, "Move " & $move & " is not legal")
 
-  game.moves.add(move)
+  game.annotatedMoves.add((move: move, annotation: annotation))
 
   game.applyResult()
 
-func addMove*(game: var Game, moveString: string) =
-  game.addMove moveString.toMove(game.currentPosition)
+func addMove*(game: var Game, moveString: string, annotation: string = "") =
+  game.addMove(moveString.toMove(game.currentPosition), annotation)
