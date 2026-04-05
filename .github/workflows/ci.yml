@@ -26,7 +26,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Nimble Test
-        if: runner.os != 'macOS' # TODO: fix macos tests
         shell: bash
         run: nimble test -d:release -d:maxNumPerftNodes=100000 -d:testEngine="$TEST_ENGINE" -d:fastchessBinPath="$FASTCHESS"
 
