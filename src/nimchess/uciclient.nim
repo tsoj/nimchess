@@ -47,17 +47,25 @@ func `=wasMoved`*(engine: var UciEngine) =
   ## Mark engine as moved - reset to safe state
   `=wasMoved`(engine.process)
 
-proc `=destroy`*(engine: var UciEngine) =
-  ## Destructor for UciEngine - ensures process is properly closed
+proc internalQuit*(engine: var UciEngine) =
   if engine.initialized:
     try:
       engine.sendCommand("quit")
     except CatchableError:
       discard # Ignore errors during cleanup
     try:
+      engine.process.terminate()
+      discard engine.process.waitForExit(timeout = 1000)
+      doAssert not engine.process.running
       engine.process.close()
     except IOError, OSError:
       discard # Ignore errors during process cleanup
+  else:
+    doAssert engine.process == nil
+
+proc `=destroy`*(engine: var UciEngine) =
+  ## Destructor for UciEngine - ensures process is properly closed
+  engine.internalQuit()
 
 func parseEngineOption*(line: string): EngineOption =
   ## Parse a UCI option line
@@ -289,9 +297,7 @@ proc quit*(engine: var UciEngine) =
   ## before going out of scope, otherwise engine deinitialization is
   ## automatically done by the destructor.
 
-  if engine.initialized:
-    engine.sendCommand("quit")
-    engine.process.close()
+  engine.internalQuit()
 
   # Mark as moved to prevent destructor from running cleanup again
   wasMoved(engine)
