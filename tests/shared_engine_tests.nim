@@ -69,11 +69,9 @@ proc runEngineTests*(testEngine: string) =
       check engine.game.moves.len == 0
       check engine.game.startPosition == startPos
 
-      let moves =
-        @[
-          "e2e4".toMove(startPos),
-          "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos))),
-        ]
+      let moves = @[
+        "e2e4".toMove(startPos), "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos)))
+      ]
       engine.setPosition(startPos, moves)
       check engine.game.moves.len == 2
       check engine.game.moves[0] == moves[0]
