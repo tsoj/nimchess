@@ -67,6 +67,7 @@ const classicalFens* = [
   "4K3/8/8/2k5/5k2/8/8/2K5 w - - 0 1",
   "2ppKPP1/8/8/2k1k3/5k2/3K4/8/P1K1ppP1 w - - 0 1",
   "QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1",
+  "QQQQQB1k/Q5RB/Q4n1B/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ b - - 0 1",
 ]
 
 const chess960Fens* = [
@@ -112,5 +113,6 @@ const perftFens* = [
   ("4K3/8/8/2k5/5k2/8/8/2K5 w - - 0 1", @[10, 159, 1834, 28370, 337694, 4967636]),
   ("2ppKPP1/8/8/2k1k3/5k2/3K4/8/P1K1ppP1 w - - 0 1", @[19, 338, 6522, 127582, 2500287, 50116123]),
   ("QQQQQQBk/Q6B/Q6Q/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ w - - 0 1", @[265, 0, 0, 0, 0, 0]),
+  ("QQQQQB1k/Q5RB/Q4n1B/Q6Q/Q6Q/Q6Q/Q6Q/KQQQQQQQ b - - 0 1", @[8, 1973, 9758, 2306745, 13608801, 3044281927]),
 ]
 #!fmt: on
