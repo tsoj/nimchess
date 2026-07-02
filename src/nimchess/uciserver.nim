@@ -1,11 +1,11 @@
 ## UCI protocol server implementation for chess engine authors.
 ##
 ## This module provides everything needed to make a chess engine speak UCI.
-## The engine author provides callback functions for search, option handling,
-## and new game events. The library handles all UCI protocol parsing,
-## position management, and threading.
+## The engine author inherits from ``EngineBase`` and overrides the methods
+## they need (only ``onGo`` is required). The library handles all UCI
+## protocol parsing, position management, and threading.
 ##
-## The search handler runs in a separate thread and must:
+## The ``onGo`` method runs in a separate thread and must:
 ## - Check ``stopFlag`` periodically and stop when it becomes true
 ## - Call ``sendUciInfo`` to report search progress
 ## - Return the best move found (the server sends ``bestmove`` automatically)
@@ -15,7 +15,9 @@
 ## .. code-block:: nim
 ##   import nimchess/uciserver
 ##
-##   proc mySearch(params: GoParams): Move {.nimcall, gcsafe.} =
+##   type MyEngine = ref object of EngineBase
+##
+##   method onGo(engine: MyEngine, params: GoParams): Move =
 ##     let position = params.game.currentPosition
 ##     # ... perform search, checking params.stopFlag[] periodically ...
 ##
@@ -24,7 +26,7 @@
 ##   var server = newUciServer(
 ##     name = "MyEngine 1.0",
 ##     author = "Me",
-##     onGo = mySearch,
+##     engine = MyEngine(),
 ##   )
 ##   server.uciLoop()
 
@@ -41,17 +43,10 @@ type
     ponder*: bool ## Pondering mode
     stopFlag*: ptr Atomic[bool] ## Check periodically; stop searching when true
 
-  SearchHandler* = proc(params: GoParams): Move {.nimcall, gcsafe.}
-    ## Search handler that runs in a separate thread.
-    ## Returns the best move found. The server calls ``sendBestMove`` automatically.
-
-  SetOptionHandler* = proc(name, value: string)
-    ## Called when the GUI sends ``setoption name <name> value <value>``.
-    ## For button-type options, value will be empty.
-
-  NewGameHandler* = proc() ## Called when the GUI sends ``ucinewgame``.
-
-  QuitHandler* = proc() ## Called when the GUI sends ``quit`` or EOF is reached.
+  EngineBase* = ref object of RootObj
+    ## Base type for UCI engines. Inherit from this and override the
+    ## methods you need. Only ``onGo`` must be implemented; all other
+    ## methods default to no-ops.
 
   CommandHandler* = proc(game: var Game, params: seq[string])
     ## Handler for a custom command. Receives the current game state
@@ -63,7 +58,7 @@ type
     handler*: CommandHandler
 
   SearchThreadInput = object
-    handler: SearchHandler
+    engine: EngineBase
     params: GoParams
     searchRunningFlag: ptr Atomic[bool]
 
@@ -72,16 +67,35 @@ type
     author*: string
     options*: seq[EngineOption]
     game*: Game ## Current game state (public for custom command access)
-    onGo*: SearchHandler
-    onSetOption*: SetOptionHandler
-    onNewGame*: NewGameHandler
-    onQuit*: QuitHandler
+    engine: EngineBase
     customCommands*: seq[CustomCommand]
     stopFlag: Atomic[bool]
     searchRunning: Atomic[bool]
     searchThread: ref Thread[SearchThreadInput]
 
 func `=copy`*(dest: var UciServer, source: UciServer) {.error.}
+
+# --- EngineBase methods ---
+# Override these in your EngineBase subtype.
+
+method onGo*(engine: EngineBase, params: GoParams): Move {.base, gcsafe.} =
+  ## Runs in a separate thread when the GUI sends ``go``.
+  ## Must be overridden. Return the best move found; the server sends
+  ## ``bestmove`` automatically.
+  doAssert false, "onGo must be implemented by the engine"
+
+method onSetOption*(engine: EngineBase, name, value: string) {.base, gcsafe.} =
+  ## Called when the GUI sends ``setoption name <name> value <value>``.
+  ## For button-type options, value will be empty.
+  discard
+
+method onNewGame*(engine: EngineBase) {.base, gcsafe.} =
+  ## Called when the GUI sends ``ucinewgame``.
+  discard
+
+method onQuit*(engine: EngineBase) {.base, gcsafe.} =
+  ## Called when the GUI sends ``quit`` or EOF is reached.
+  discard
 
 # --- UCI output helpers ---
 # These are safe to call from the search thread.
@@ -129,7 +143,7 @@ proc sendInfoString*(s: string) =
 
 proc runSearchThread(input: SearchThreadInput) {.thread, nimcall.} =
   input.searchRunningFlag[].store(true)
-  let bestMove = input.handler(input.params)
+  let bestMove = input.engine.onGo(input.params)
   sendBestMove(bestMove, input.params.game.currentPosition)
   input.searchRunningFlag[].store(false)
 
@@ -141,8 +155,7 @@ proc stopSearch(server: var UciServer) =
 
 proc finalize(server: var UciServer) =
   server.stopSearch()
-  if server.onQuit != nil:
-    server.onQuit()
+  server.engine.onQuit()
 
 proc uciCommand(server: UciServer) =
   echo "id name ", server.name
@@ -237,7 +250,7 @@ proc go(server: var UciServer, params: seq[string]) =
     server.searchThread[],
     runSearchThread,
     SearchThreadInput(
-      handler: server.onGo,
+      engine: server.engine,
       params: goParams,
       searchRunningFlag: addr server.searchRunning,
     ),
@@ -311,22 +324,17 @@ proc printHelp(server: UciServer, params: seq[string]) =
 proc newUciServer*(
     name: string,
     author: string,
+    engine: EngineBase,
     options: openArray[EngineOption] = [],
-    onGo: SearchHandler,
-    onSetOption: SetOptionHandler = nil,
-    onNewGame: NewGameHandler = nil,
-    onQuit: QuitHandler = nil,
     customCommands: openArray[CustomCommand] = [],
 ): UciServer =
-  ## Creates a new UCI server.
+  ## Creates a new UCI server that dispatches protocol events to ``engine``.
+  doAssert engine != nil, "engine must not be nil"
   result = UciServer(
     name: name,
     author: author,
     options: @options,
-    onGo: onGo,
-    onSetOption: onSetOption,
-    onNewGame: onNewGame,
-    onQuit: onQuit,
+    engine: engine,
     customCommands: @customCommands,
     game: newGame(),
   )
@@ -348,7 +356,7 @@ proc dispatchCommand(server: var UciServer, command: string): bool =
   of "isready":
     echo "readyok"
   of "setoption":
-    if server.onSetOption != nil and params.len >= 3 and params[1] == "name":
+    if params.len >= 3 and params[1] == "name":
       var nameEnd = params.len
       var valueStart = -1
       for i in 2 ..< params.len:
@@ -362,7 +370,7 @@ proc dispatchCommand(server: var UciServer, command: string): bool =
           params[valueStart ..^ 1].join(" ")
         else:
           ""
-      server.onSetOption(optName, optValue)
+      server.engine.onSetOption(optName, optValue)
   of "position":
     server.setPosition(params[1 ..^ 1])
   of "go":
@@ -373,8 +381,7 @@ proc dispatchCommand(server: var UciServer, command: string): bool =
     if server.searchRunning.load:
       sendInfoString("Can't start new game while search is running")
     else:
-      if server.onNewGame != nil:
-        server.onNewGame()
+      server.engine.onNewGame()
   of "ponderhit":
     discard
   of "print":

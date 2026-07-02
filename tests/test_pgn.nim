@@ -38,7 +38,8 @@ suite "PGN Parser Tests":
       check claimedUCI == uciMove
 
   test "Parse single game from string":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Test Game"]
 [Site "Test Site"]
 [Date "2024.01.01"]
@@ -63,7 +64,8 @@ suite "PGN Parser Tests":
     check game.moves[0] == toMove("e4", classicalStartPos)
 
   test "Parse multiple games from string":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Game 1"]
 [White "A"]
 [Black "B"]
@@ -87,7 +89,8 @@ suite "PGN Parser Tests":
     check games[1].result == "0-1"
 
   test "Parse game with FEN starting position":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Custom Position"]
 [FEN "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"]
 [White "Player 1"]
@@ -102,7 +105,8 @@ suite "PGN Parser Tests":
     check "4p3/4P3" in games[0].startPosition.fen
 
   test "Parse game with comments and annotations":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Annotated Game"]
 [White "Annotator"]
 [Black "Student"]
@@ -119,7 +123,8 @@ suite "PGN Parser Tests":
     check games[0].moves.len >= 6
 
   test "Handle castling moves":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Castling Test"]
 [White "King"]
 [Black "Rook"]
@@ -138,7 +143,8 @@ suite "PGN Parser Tests":
     check game.moves[8].isCastling # whites's O-O-O
 
   test "Handle pawn promotion":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Promotion Test"]
 [White "Promoter"]
 [Black "Promoted"]
@@ -164,7 +170,8 @@ suite "PGN Parser Tests":
     check games.len == 0
 
   test "Malformed PGN gracefully handled":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Malformed"
 1. e4 e5 this is not a valid move
 """
@@ -174,7 +181,8 @@ suite "PGN Parser Tests":
     check games.len >= 0
 
   test "Parse from StringStream":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Stream Test"]
 [White "Stream"]
 [Black "Test"]
@@ -197,19 +205,20 @@ suite "PGN Parser Tests":
       let pgnContent =
         """
 [Event "Result Test"]
-[Result """ & "\"" & resultStr & "\"" & """]
+[Result """ & "\"" & resultStr & "\"" &
+        """]
 [White "A"]
 [Black "B"]
 
-1. e4 e5 """ &
-        resultStr
+1. e4 e5 """ & resultStr
 
       let games = readPgnFromString(pgnContent)
       check games.len == 1
       check games[0].result == expected
 
   test "Handle semicolon comments":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Semicolon Comments"]
 [White "Player1"]
 [Black "Player2"]
@@ -227,7 +236,8 @@ Nc6 3. Bb5 1-0
     check games[0].moves.len == 5 # e4, e5, Nf3, Nc6, Bb5
 
   test "Handle brace comments spanning multiple lines":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Multi-line Comments"]
 [White "Player1"]
 [Black "Player2"]
@@ -244,7 +254,8 @@ and should be ignored } e5 2. Nf3 Nc6 1-0
     check games[0].moves.len == 4 # e4, e5, Nf3, Nc6
 
   test "Ignore game results inside comments":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Result in Comment"]
 [White "Player1"]
 [Black "Player2"]
@@ -260,7 +271,8 @@ Nc6 3. Bb5 *
     check games[0].moves.len == 5
 
   test "Ignore headers inside comments":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Header in Comment"]
 [White "Player1"]
 [Black "Player2"]
@@ -284,7 +296,8 @@ Nc6 1-0
     check games[1].headers["White"] == "RealPlayer"
 
   test "Game ends with result token":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Result Ending"]
 [White "Player1"]
 [Black "Player2"]
@@ -306,7 +319,8 @@ Nc6 1-0
     check games[1].result == "0-1"
 
   test "Handle illegal moves":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Illegal Moves"]
 [White "Cheater"]
 [Black "Victim"]
@@ -319,7 +333,8 @@ Nc6 1-0
     check games.len == 0
 
   test "Handle completely invalid PGN moves":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Invalid PGN"]
 [White "Bad"]
 [Black "Parser"]
@@ -332,7 +347,8 @@ Nc6 1-0
     check games.len == 0
 
   test "Handle unclosed brace comment at end":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Unclosed Comment"]
 [White "Player1"]
 [Black "Player2"]
@@ -347,7 +363,8 @@ and continues to the end of the game
     check games[0].moves.len == 3 # e4, e5, Nf3
 
   test "Handle empty game with only result":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Empty Game"]
 [White "Nobody"]
 [Black "Played"]
@@ -362,7 +379,8 @@ and continues to the end of the game
     check games[0].result == "1/2-1/2"
 
   test "Complex comment scenarios":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Complex Comments"]
 [White "Complex"]
 [Black "Parser"]
@@ -381,7 +399,8 @@ e5 2. Nf3 { Multi-line
     check games[0].result == "1-0"
 
   test "Move commentary":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "?"]
 [Site "?"]
 [Black "?"]
@@ -402,7 +421,8 @@ e5 2. Nf3 { Multi-line
     check games[1].result == "*"
 
   test "Annotations from brace comments":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Annotated"]
 [Result "*"]
 
@@ -418,7 +438,8 @@ e5 2. Nf3 { Multi-line
     check game.annotatedMoves[2].annotation == "Attacks e5"
 
   test "Annotations from parenthetical comments":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Parens"]
 [Result "*"]
 
@@ -431,7 +452,8 @@ e5 2. Nf3 { Multi-line
     check games[0].annotatedMoves[1].annotation == ""
 
   test "Annotations from semicolon comments":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Semicolon"]
 [Result "*"]
 
@@ -444,7 +466,8 @@ e5 2. Nf3 *
     check games[0].annotatedMoves[0].annotation == "A classic"
 
   test "Multiple comments on same move":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "Multi"]
 [Result "*"]
 
@@ -457,7 +480,8 @@ e5 2. Nf3 *
     check "Second comment" in games[0].annotatedMoves[0].annotation
 
   test "Pre-move comment stored as header":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "PreMove"]
 [Result "*"]
 
@@ -470,7 +494,8 @@ e5 2. Nf3 *
     check games[0].annotatedMoves[0].annotation == ""
 
   test "Multi-line brace comment annotation":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "MultiLine"]
 [Result "*"]
 
@@ -484,7 +509,8 @@ lines } e5 *
     check "spans multiple" in games[0].annotatedMoves[0].annotation
 
   test "Annotation round-trip through toPgnString":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "RoundTrip"]
 [Result "*"]
 
@@ -499,7 +525,8 @@ lines } e5 *
     check reparsed[0].annotatedMoves[2].annotation == ""
 
   test "Empty annotations by default":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "NoComments"]
 [Result "*"]
 
@@ -512,7 +539,8 @@ lines } e5 *
       check am.annotation == ""
 
   test "Move commentary with annotations":
-    let pgnContent = """
+    let pgnContent =
+      """
 [Event "?"]
 [Site "?"]
 [Black "?"]

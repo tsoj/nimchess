@@ -5,7 +5,7 @@ import nimchess/[uciclient, strchess, game]
 proc runEngineTests*(testEngine: string) =
   suite "UCI Engine Integration Tests (" & testEngine & ")":
     test "Engine availability":
-      var engine: UciEngine
+      var engine: UciEngineProcess
       try:
         engine.start(testEngine)
         check true
@@ -14,7 +14,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "Engine initialization":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         check engine.initialized
         check engine.name.len > 0
@@ -27,7 +27,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "Engine ready check":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         let ready = engine.isReady()
         check ready
@@ -40,7 +40,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "Position setup":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         let startPos =
           "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".toPosition
@@ -61,7 +61,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "setPosition updates engine game state correctly":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
 
       let startPos = classicalStartPos
       engine.setPosition(startPos)
@@ -69,9 +69,11 @@ proc runEngineTests*(testEngine: string) =
       check engine.game.moves.len == 0
       check engine.game.startPosition == startPos
 
-      let moves = @[
-        "e2e4".toMove(startPos), "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos)))
-      ]
+      let moves =
+        @[
+          "e2e4".toMove(startPos),
+          "e7e5".toMove(startPos.doMove("e2e4".toMove(startPos))),
+        ]
       engine.setPosition(startPos, moves)
       check engine.game.moves.len == 2
       check engine.game.moves[0] == moves[0]
@@ -94,7 +96,7 @@ proc runEngineTests*(testEngine: string) =
       check engine.game.currentPosition() == customPos.doMove(additionalMove)
 
     test "Basic search (movetime)":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         let startPos = classicalStartPos
         engine.setPosition(startPos)
@@ -112,7 +114,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "Move validation":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         let startPos = classicalStartPos
         engine.setPosition(startPos)
@@ -131,7 +133,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "New game command":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         engine.newGame()
 
@@ -152,7 +154,7 @@ proc runEngineTests*(testEngine: string) =
 
     test "High-level play function":
       try:
-        var engine = newUciEngine(testEngine)
+        var engine = newUciEngineProcess(testEngine)
 
         let startPos = classicalStartPos
         let limit = Limit(movetimeSeconds: some(0.1))
@@ -165,7 +167,7 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
     test "Multiple positions search":
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       try:
         for fen in [
           "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
@@ -187,24 +189,24 @@ proc runEngineTests*(testEngine: string) =
         fail()
 
   suite "UCI Engine Move Semantics Tests (" & testEngine & ")":
-    test "UciEngine move construction from function return":
-      proc createEngine(): UciEngine =
-        result = newUciEngine(testEngine)
+    test "UciEngineProcess move construction from function return":
+      proc createEngine(): UciEngineProcess =
+        result = newUciEngineProcess(testEngine)
 
       let engine = createEngine()
       check engine.initialized
 
-    test "UciEngine explicit move with system.move":
-      var engine1 = newUciEngine(testEngine)
+    test "UciEngineProcess explicit move with system.move":
+      var engine1 = newUciEngineProcess(testEngine)
       check engine1.initialized
 
       var engine2 = system.move(engine1)
       check engine2.initialized
       check not engine1.initialized
 
-    test "UciEngine move with ensureMove verification":
+    test "UciEngineProcess move with ensureMove verification":
       proc stuff() =
-        var engineA = newUciEngine(testEngine)
+        var engineA = newUciEngineProcess(testEngine)
         var engineB = ensureMove engineA
         check engineB.initialized
 
@@ -213,40 +215,40 @@ proc runEngineTests*(testEngine: string) =
 
       stuff()
 
-    test "UciEngine sink parameter move":
-      proc processEngine(engine: sink UciEngine): bool =
+    test "UciEngineProcess sink parameter move":
+      proc processEngine(engine: sink UciEngineProcess): bool =
         engine.initialized
 
-      var engine = newUciEngine(testEngine)
+      var engine = newUciEngineProcess(testEngine)
       let result = processEngine(move engine)
       check result
       check not engine.initialized
 
-    test "UciEngine move in assignment chain":
-      proc createEngine(): UciEngine =
-        newUciEngine(testEngine)
+    test "UciEngineProcess move in assignment chain":
+      proc createEngine(): UciEngineProcess =
+        newUciEngineProcess(testEngine)
 
       var engine1 = createEngine()
-      var engine2: UciEngine
+      var engine2: UciEngineProcess
       engine2 = system.move(engine1)
 
       check not engine1.initialized
       check engine2.initialized
 
-    test "UciEngine move with sequence operations":
-      var engines: seq[UciEngine]
-      engines.add(newUciEngine(testEngine))
-      engines.add(newUciEngine(testEngine))
+    test "UciEngineProcess move with sequence operations":
+      var engines: seq[UciEngineProcess]
+      engines.add(newUciEngineProcess(testEngine))
+      engines.add(newUciEngineProcess(testEngine))
 
       check engines.len == 2
       check engines[0].initialized
       check engines[1].initialized
 
-    test "UciEngine lastReadOf optimization":
-      proc useEngine(engine: UciEngine): bool =
+    test "UciEngineProcess lastReadOf optimization":
+      proc useEngine(engine: UciEngineProcess): bool =
         result = engine.initialized
 
       block:
-        let engine = newUciEngine(testEngine)
+        let engine = newUciEngineProcess(testEngine)
         let result = useEngine(engine)
         check result

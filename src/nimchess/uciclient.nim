@@ -3,7 +3,7 @@ import position, move, types, strchess, movegen, game, ucitypes
 
 export ucitypes
 
-type UciEngine* = object ## UCI chess engine communication handler
+type UciEngineProcess* = object ## UCI chess engine communication handler
   process: Process = nil
   options*: Table[string, EngineOption]
   name*: string
@@ -11,14 +11,14 @@ type UciEngine* = object ## UCI chess engine communication handler
   game*: Game = default Game
   debug: bool = false
 
-func initialized*(engine: UciEngine): bool =
+func initialized*(engine: UciEngineProcess): bool =
   engine.process != nil
 
-proc debugPrint(engine: UciEngine, s: string) =
+proc debugPrint(engine: UciEngineProcess, s: string) =
   if engine.debug:
     echo engine.name, " ", engine.process.processID, " ", s
 
-proc sendCommand(engine: var UciEngine, command: string) =
+proc sendCommand(engine: var UciEngineProcess, command: string) =
   ## Send a command to the engine
   if not engine.initialized:
     raise newException(ValueError, "Engine not initialized")
@@ -29,7 +29,7 @@ proc sendCommand(engine: var UciEngine, command: string) =
   engine.process.inputStream.writeLine(command)
   engine.process.inputStream.flush()
 
-proc readLine(engine: var UciEngine): string =
+proc readLine(engine: var UciEngineProcess): string =
   ## Read a line from the engine
   if not engine.initialized:
     raise newException(ValueError, "Engine not initialized")
@@ -41,13 +41,13 @@ proc readLine(engine: var UciEngine): string =
 
   result = result.strip()
 
-func `=copy`*(dest: var UciEngine, source: UciEngine) {.error.}
+func `=copy`*(dest: var UciEngineProcess, source: UciEngineProcess) {.error.}
 
-func `=wasMoved`*(engine: var UciEngine) =
+func `=wasMoved`*(engine: var UciEngineProcess) =
   ## Mark engine as moved - reset to safe state
   `=wasMoved`(engine.process)
 
-proc internalQuit*(engine: var UciEngine) =
+proc internalQuit*(engine: var UciEngineProcess) =
   if engine.initialized:
     try:
       engine.sendCommand("quit")
@@ -63,8 +63,8 @@ proc internalQuit*(engine: var UciEngine) =
   else:
     doAssert engine.process == nil
 
-proc `=destroy`*(engine: var UciEngine) =
-  ## Destructor for UciEngine - ensures process is properly closed
+proc `=destroy`*(engine: var UciEngineProcess) =
+  ## Destructor for UciEngineProcess - ensures process is properly closed
   engine.internalQuit()
 
 func parseEngineOption*(line: string): EngineOption =
@@ -198,7 +198,7 @@ func parseInfo*(line: string, position: Position): UciInfo =
       discard # Ignore unknown info tokens
     i += 1
 
-proc setPosition*(engine: var UciEngine, game: Game) =
+proc setPosition*(engine: var UciEngineProcess, game: Game) =
   ## Set the current position of the engine state
 
   engine.game = game
@@ -217,7 +217,9 @@ proc setPosition*(engine: var UciEngine, game: Game) =
 
   engine.sendCommand(cmd)
 
-proc setPosition*(engine: var UciEngine, position: Position, moves: seq[Move] = @[]) =
+proc setPosition*(
+    engine: var UciEngineProcess, position: Position, moves: seq[Move] = @[]
+) =
   # Create a new game with the given starting position
   var game = newGame(startPosition = position)
 
@@ -227,7 +229,7 @@ proc setPosition*(engine: var UciEngine, position: Position, moves: seq[Move] = 
 
   engine.setPosition(game)
 
-proc uciInitialize(engine: var UciEngine) =
+proc uciInitialize(engine: var UciEngineProcess) =
   engine.sendCommand("uci")
 
   while true:
@@ -264,7 +266,9 @@ proc uciInitialize(engine: var UciEngine) =
 
   engine.setPosition(engine.game)
 
-proc start*(engine: var UciEngine, command: string, args: openArray[string] = []) =
+proc start*(
+    engine: var UciEngineProcess, command: string, args: openArray[string] = []
+) =
   ## Start the engine process
 
   if engine.initialized:
@@ -279,19 +283,19 @@ proc start*(engine: var UciEngine, command: string, args: openArray[string] = []
 
   engine.uciInitialize
 
-proc newUciEngine*(
+proc newUciEngineProcess*(
     command: string, args: openArray[string] = [], debug = false
-): UciEngine =
+): UciEngineProcess =
   ## Convenience function to start and initialize an engine
-  result = default UciEngine
+  result = default UciEngineProcess
   result.debug = debug
   result.start(command, args)
 
-proc stop*(engine: var UciEngine) =
+proc stop*(engine: var UciEngineProcess) =
   ## Stop current search
   engine.sendCommand("stop")
 
-proc quit*(engine: var UciEngine) =
+proc quit*(engine: var UciEngineProcess) =
   ## Stops the engine process.
   ## Only needs to be called if you want to stop the engine explicitly
   ## before going out of scope, otherwise engine deinitialization is
@@ -303,7 +307,7 @@ proc quit*(engine: var UciEngine) =
   wasMoved(engine)
 
 proc setOption*(
-    engine: var UciEngine, name: string, value: string, suppressWarning = false
+    engine: var UciEngineProcess, name: string, value: string, suppressWarning = false
 ) =
   ## Set an engine option
 
@@ -313,17 +317,17 @@ proc setOption*(
   let cmd = "setoption name " & name & " value " & value
   engine.sendCommand(cmd)
 
-proc isReady*(engine: var UciEngine): bool =
+proc isReady*(engine: var UciEngineProcess): bool =
   ## Check if engine is ready
   engine.sendCommand("isready")
 
   let line = engine.readLine()
   return line == "readyok"
 
-proc newGame*(engine: var UciEngine) =
+proc newGame*(engine: var UciEngineProcess) =
   engine.sendCommand("ucinewgame")
 
-proc go*(engine: var UciEngine, limit: Limit): PlayResult =
+proc go*(engine: var UciEngineProcess, limit: Limit): PlayResult =
   ## Ask engine to search and return best move.
   ## Uses the previously set position state of the engine.
   var cmd = "go"
@@ -406,12 +410,12 @@ proc go*(engine: var UciEngine, limit: Limit): PlayResult =
     else:
       discard
 
-proc play*(engine: var UciEngine, game: Game, limit: Limit): PlayResult =
+proc play*(engine: var UciEngineProcess, game: Game, limit: Limit): PlayResult =
   discard engine.isReady()
   engine.setPosition(game)
   engine.go(limit)
 
-proc play*(engine: var UciEngine, position: Position, limit: Limit): PlayResult =
+proc play*(engine: var UciEngineProcess, position: Position, limit: Limit): PlayResult =
   discard engine.isReady()
   engine.setPosition(position)
   engine.go(limit)

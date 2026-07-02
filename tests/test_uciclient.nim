@@ -242,7 +242,7 @@ runEngineTests(testEngine = testEngine)
 # Stockfish-specific tests
 suite "Stockfish-specific Tests":
   test "Engine options parsing":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       check engine.options.len > 0
 
@@ -262,7 +262,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Setting engine options":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       var optionName = ""
       for name, opt in engine.options.pairs:
@@ -283,7 +283,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Depth-limited search":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       let startPos = classicalStartPos
       engine.setPosition(startPos)
@@ -302,7 +302,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Info parsing during search":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       let startPos = classicalStartPos
       engine.setPosition(startPos)
@@ -323,7 +323,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Mate position detection":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       let matePos = "k7/7R/6R1/8/8/8/8/K7 w - - 0 1".toPosition
       engine.setPosition(matePos)
@@ -344,7 +344,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Multi-PV search - basic functionality":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       engine.setOption("MultiPV", "3")
 
@@ -375,7 +375,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Multi-PV search - tactical position":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       engine.setOption("MultiPV", "4")
 
@@ -408,7 +408,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Multi-PV search - info accessor function":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       let startPos = classicalStartPos
       engine.setPosition(startPos)
@@ -435,7 +435,7 @@ suite "Stockfish-specific Tests":
       fail()
 
   test "Multi-PV search - PV line validation":
-    var engine = newUciEngine(testEngine)
+    var engine = newUciEngineProcess(testEngine)
     try:
       engine.setOption("MultiPV", "2")
 

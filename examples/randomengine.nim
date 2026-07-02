@@ -1,7 +1,9 @@
 import std/[random, os, atomics, options]
 import nimchess/[uciserver, movegen, position, types]
 
-proc searchHandler(params: GoParams): Move {.nimcall, gcsafe.} =
+type RandomEngine = ref object of EngineBase
+
+method onGo(engine: RandomEngine, params: GoParams): Move =
   let position = params.game.currentPosition
 
   if params.searchMoves.len == 0:
@@ -48,5 +50,5 @@ proc searchHandler(params: GoParams): Move {.nimcall, gcsafe.} =
   bestMove
 
 var server =
-  newUciServer(name = "RandomEngine", author = "nimchess", onGo = searchHandler)
+  newUciServer(name = "RandomEngine", author = "nimchess", engine = RandomEngine())
 server.uciLoop()

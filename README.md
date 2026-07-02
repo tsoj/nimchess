@@ -69,7 +69,7 @@ echo game.result
 
 ```nim
 # Communicate with UCI engines like Stockfish
-var engine = newUciEngine("stockfish")
+var engine = newUciEngineProcess("stockfish")
 let result = engine.play(startPos, Limit(depth: 10))
 echo "Best move: ", result.move.toSAN(startPos)
 ```
@@ -78,15 +78,17 @@ echo "Best move: ", result.move.toSAN(startPos)
 
 ```nim
 # Implement a UCI chess engine
-proc mySearch(params: GoParams) {.nimcall, gcsafe.} =
+type MyEngine = ref object of Engine
+
+method onGo(engine: MyEngine, params: GoParams): Move =
   let position = params.game.currentPosition
   # ... perform search, checking params.stopFlag[] periodically ...
-  sendBestMove(bestMove, position)
+  return bestMove
 
 var server = newUciServer(
   name = "MyEngine 1.0",
   author = "Me",
-  onGo = mySearch,
+  engine = MyEngine(),
 )
 
 server.uciLoop()

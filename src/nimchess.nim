@@ -93,7 +93,7 @@ runnableExamples:
 ##
 runnableExamples:
   # Note: This example requires a UCI engine like Stockfish to be installed
-  var engine = newUciEngine("stockfish")
+  var engine = newUciEngineProcess("stockfish")
 
   let startPos = classicalStartPos
   let limit = Limit(depth: 10)
