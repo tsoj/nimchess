@@ -123,6 +123,22 @@ func inCheck*(position: Position, us: Color): bool =
   else:
     position.isAttacked(us, kingSquare)
 
+func insufficientMaterial*(position: Position): bool =
+  ## Checks if neither side has sufficient material to deliver checkmate
+  ## (FIDE draw rule): king vs king, king and one minor piece vs king,
+  ## or only bishops that all stand on same-colored squares.
+  if not empty(position[pawn] or position[rook] or position[queen]):
+    return false
+
+  let minorPieces = position[knight] or position[bishop]
+  if minorPieces.countSetBits <= 1:
+    return true
+
+  if not position[knight].empty:
+    return false
+
+  empty(position[bishop] and darkSquares) or empty(position[bishop] and lightSquares)
+
 func isChess960*(position: Position): bool =
   const
     classicalRookSource =

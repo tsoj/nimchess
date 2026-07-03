@@ -126,6 +126,9 @@ const
     collect64 (i) => attackForSquareAndKey(0, i.Square, [-9, 9], (sq, occ) => 0.uint8)
   antiDiagonals: array[a1 .. h8, Bitboard] =
     collect64 (i) => attackForSquareAndKey(0, i.Square, [-7, 7], (sq, occ) => 0.uint8)
+  darkSquares* =
+    0b1010101001010101101010100101010110101010010101011010101001010101u64.Bitboard
+  lightSquares* = not darkSquares
 
 #!fmt: off
 func hashkeyRank(square: Square, occupancy: Bitboard): uint8 =

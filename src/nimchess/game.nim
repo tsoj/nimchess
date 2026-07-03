@@ -80,6 +80,27 @@ func seventyFiveMoveRule*(game: Game, moveIndex: int = -1): bool =
   let targetIndex = game.getTargetIndex(moveIndex)
   game.positions()[targetIndex].halfmoveClock >= 150
 
+func insufficientMaterial*(game: Game, moveIndex: int = -1): bool =
+  ## Check if the position at moveIndex has insufficient mating material
+  ## according to the FIDE rules (draw).
+  ## If moveIndex is -1, checks at the current position.
+  let targetIndex = game.getTargetIndex(moveIndex)
+  game.positions()[targetIndex].insufficientMaterial
+
+func isGameOver*(
+    game: Game, claimFiftyMoveRule = false, claimThreefoldRepetition = false
+): bool =
+  ## Check if the game is over at the current position: checkmate, stalemate,
+  ## insufficient material, fivefold repetition, or the 75-move rule.
+  ## The 50-move rule and threefold repetition only end a game if a player
+  ## claims the draw; set the corresponding parameters to true to treat them
+  ## as if they are always claimed.
+  let currentPos = game.currentPosition()
+  currentPos.isMate() or currentPos.isStalemate() or currentPos.insufficientMaterial or
+    game.fivefoldRepetition() or game.seventyFiveMoveRule() or
+    (claimFiftyMoveRule and game.fiftyMoveRule()) or
+    (claimThreefoldRepetition and game.hasRepetition())
+
 func applyResult(game: var Game) =
   # Check if the game has ended and update result if it was still ongoing
   let currentPos = game.currentPosition()
@@ -93,9 +114,13 @@ func applyResult(game: var Game) =
     elif currentPos.isStalemate():
       # Stalemate
       game.result = "1/2-1/2"
-    elif game.fivefoldRepetition() or game.seventyFiveMoveRule():
+    elif currentPos.insufficientMaterial or game.fivefoldRepetition() or
+        game.seventyFiveMoveRule():
       # Mandatory draw conditions
       game.result = "1/2-1/2"
+
+    if game.result != "*":
+      game.headers["Result"] = game.result
 
 proc newGame*(
     event: string = "?",

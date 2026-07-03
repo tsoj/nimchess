@@ -141,13 +141,13 @@ suite "Game Tests":
 
     # Test with a FEN position that has a high halfmove clock (99 halfmoves)
     # This is just one halfmove away from triggering the 50-move rule
-    let highHalfmoveClockFen = "8/8/8/8/8/3k4/3K4/8 w - - 99 50"
+    let highHalfmoveClockFen = "8/8/8/8/8/2k5/8/K6R w - - 99 50"
     let almostFiftyGame = newGame(fen = highHalfmoveClockFen)
     check not almostFiftyGame.fiftyMoveRule()
     check not almostFiftyGame.seventyFiveMoveRule()
 
     # Test with a FEN position that triggers the 50-move rule (100 halfmoves)
-    let fiftyMoveRuleFen = "8/8/8/8/8/3k4/3K4/8 w - - 100 51"
+    let fiftyMoveRuleFen = "8/8/8/8/8/2k5/8/K6R w - - 100 51"
     let fiftyRuleTriggeredGame = newGame(fen = fiftyMoveRuleFen)
     check fiftyRuleTriggeredGame.fiftyMoveRule()
     check not fiftyRuleTriggeredGame.seventyFiveMoveRule()
@@ -155,14 +155,14 @@ suite "Game Tests":
 
     # Test with a FEN position that has a high halfmove clock (149 halfmoves)
     # This is just one halfmove away from triggering the 75-move rule
-    let highSeventyFiveHalfmoveClockFen = "8/8/8/8/8/3k4/3K4/8 w - - 149 75"
+    let highSeventyFiveHalfmoveClockFen = "8/8/8/8/8/2k5/8/K6R w - - 149 75"
     let almostSeventyFiveGame = newGame(fen = highSeventyFiveHalfmoveClockFen)
     check almostSeventyFiveGame.fiftyMoveRule() # Should trigger 50-move rule
     check not almostSeventyFiveGame.seventyFiveMoveRule()
     check almostSeventyFiveGame.result == "*" # Still not automatic
 
     # Test with a FEN position that triggers the 75-move rule (150 halfmoves)
-    let seventyFiveMoveRuleFen = "8/8/8/8/8/3k4/3K4/8 w - - 150 76"
+    let seventyFiveMoveRuleFen = "8/8/8/8/8/2k5/8/K6R w - - 150 76"
     let seventyFiveRuleTriggeredGame = newGame(fen = seventyFiveMoveRuleFen)
     check seventyFiveRuleTriggeredGame.fiftyMoveRule() # Should also trigger 50-move rule
     check seventyFiveRuleTriggeredGame.seventyFiveMoveRule()
@@ -170,8 +170,63 @@ suite "Game Tests":
       # 75-move rule is mandatory, automatic
 
     # Test with a FEN position that exceeds both rules (200 halfmoves)
-    let beyondBothRulesFen = "8/8/8/8/8/3k4/3K4/8 b - - 200 101"
+    let beyondBothRulesFen = "8/8/8/8/8/2k5/8/K6R b - - 200 101"
     let beyondBothGame = newGame(fen = beyondBothRulesFen)
     check beyondBothGame.fiftyMoveRule()
     check beyondBothGame.seventyFiveMoveRule()
     check beyondBothGame.result == "1/2-1/2" # Should automatically be a draw
+
+  test "insufficient material":
+    # King vs king
+    check newGame(fen = "8/8/8/4k3/8/8/8/K7 w - - 0 1").insufficientMaterial()
+    # King and minor piece vs king
+    check newGame(fen = "8/8/8/4k3/8/8/8/KB6 w - - 0 1").insufficientMaterial()
+    check newGame(fen = "8/8/8/4k3/8/8/8/KN6 w - - 0 1").insufficientMaterial()
+    # Bishops all on the same square color (b1 and e4 are both light squares)
+    check newGame(fen = "8/8/8/4k3/4b3/8/8/KB6 w - - 0 1").insufficientMaterial()
+    # Bishops on different square colors
+    check not newGame(fen = "8/8/8/4k3/3b4/8/8/KB6 w - - 0 1").insufficientMaterial()
+    # Two knights
+    check not newGame(fen = "8/8/8/4k3/8/8/8/KNN5 w - - 0 1").insufficientMaterial()
+    # Any pawn, rook or queen is sufficient
+    check not newGame(fen = "8/8/8/4k3/8/8/P7/K7 w - - 0 1").insufficientMaterial()
+    check not newGame(fen = "8/8/8/4k3/8/8/8/KR6 w - - 0 1").insufficientMaterial()
+    check not newGame(fen = "8/8/8/4k3/8/8/8/KQ6 w - - 0 1").insufficientMaterial()
+
+    # Insufficient material is a mandatory draw
+    check newGame(fen = "8/8/8/4k3/8/8/8/KB6 w - - 0 1").result == "1/2-1/2"
+
+    # Capturing the last piece leads to a dead position and ends the game
+    var game1 = newGame(fen = "k7/8/8/8/8/8/q7/K7 w - - 0 1")
+    check not game1.insufficientMaterial()
+    game1.addMove "Kxa2"
+    check game1.insufficientMaterial()
+    check not game1.insufficientMaterial(0)
+    check game1.result == "1/2-1/2"
+
+  test "isGameOver":
+    check not newGame().isGameOver()
+
+    # Checkmate and stalemate
+    check newGame(fen = "k1K5/8/8/8/8/8/8/Q7 b - - 0 1").isGameOver() # mate
+    check newGame(fen = "k7/8/1Q6/8/8/8/8/7K b - - 0 1").isGameOver() # stalemate
+
+    # Insufficient material
+    check newGame(fen = "8/8/8/4k3/8/8/8/KB6 w - - 0 1").isGameOver()
+
+    # 50-move rule and threefold repetition only end the game if claimed
+    let fiftyGame = newGame(fen = "8/8/8/8/8/2k5/8/K6R w - - 100 51")
+    check not fiftyGame.isGameOver()
+    check fiftyGame.isGameOver(claimFiftyMoveRule = true)
+
+    var repGame = newGame()
+    for _ in 1 .. 2:
+      repGame.addMove "Nf3"
+      repGame.addMove "Nf6"
+      repGame.addMove "Ng1"
+      repGame.addMove "Ng8"
+    check not repGame.isGameOver()
+    check repGame.isGameOver(claimThreefoldRepetition = true)
+
+    # Mandatory endings need no claim
+    check newGame(fen = "8/8/8/8/8/2k5/8/K6R w - - 150 76").isGameOver()
