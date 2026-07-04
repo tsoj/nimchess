@@ -170,10 +170,7 @@ func parseInfo*(line: string, position: Position): UciInfo =
           i += 1
           try:
             let mateVal = parseInt(parts[i])
-            if mateVal == 0:
-              result.score = some(Score(kind: skMateGiven))
-            else:
-              result.score = some(Score(kind: skMate, mate: mateVal))
+            result.score = some(Score(kind: skMate, mate: mateVal))
           except ValueError:
             discard
     of "pv":

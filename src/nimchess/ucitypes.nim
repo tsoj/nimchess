@@ -40,16 +40,13 @@ type
   ScoreKind* = enum
     skCp ## Centipawn score
     skMate ## Mate in N moves
-    skMateGiven ## Mate is given (mate in 0)
 
   Score* = object ## Represents an evaluation score
     case kind*: ScoreKind
     of skCp:
       cp*: int
     of skMate:
-      mate*: int ## Positive = we mate, negative = we get mated
-    of skMateGiven:
-      discard
+      mate*: int
 
   UciInfo* = object ## Information from UCI engine during search
     depth*: Option[int] ## Search depth in plies
@@ -77,14 +74,8 @@ func `==`*(a, b: Score): bool =
     return a.cp == b.cp
   of skMate:
     return a.mate == b.mate
-  of skMateGiven:
-    return true
 
 func `<`*(a, b: Score): bool =
-  if a.kind == skMateGiven:
-    return false
-  if b.kind == skMateGiven:
-    return true
   if a.kind == skMate and b.kind == skMate:
     if a.mate > 0 and b.mate > 0:
       return a.mate > b.mate
@@ -101,13 +92,14 @@ func `<=`*(a, b: Score): bool =
   a < b or a == b
 
 func `$`*(score: Score): string =
+  var
+    value: int
+    kind: string
   case score.kind
   of skCp:
     "cp " & $score.cp
   of skMate:
     "mate " & $score.mate
-  of skMateGiven:
-    "mate 0"
 
 func info*(playResult: PlayResult): UciInfo =
   ## Gets the UCI info of the main PV line.

@@ -193,12 +193,18 @@ suite "UCI Engine Unit Tests":
     check info.hashfull.get == 600
 
   test "Score display":
-    let cpScore = Score(kind: skCp, cp: 150)
+    var cpScore = Score(kind: skCp, cp: 150)
     check $cpScore == "cp 150"
-    let mateScore = Score(kind: skMate, mate: 3)
+    var mateScore = Score(kind: skMate, mate: 3)
     check $mateScore == "mate 3"
-    let mateGivenScore = Score(kind: skMateGiven)
-    check $mateGivenScore == "mate 0"
+    cpScore = Score(kind: skCp, cp: -25)
+    check $cpScore == "cp -25"
+    mateScore = Score(kind: skMate, mate: -20)
+    check $mateScore == "mate -20"
+    cpScore = Score(kind: skCp, cp: -0)
+    check $cpScore == "cp 0"
+    mateScore = Score(kind: skMate, mate: -0)
+    check $mateScore == "mate 0"
 
   test "Score comparison":
     let scores = [
@@ -207,19 +213,15 @@ suite "UCI Engine Unit Tests":
       Score(kind: skCp, cp: 0),
       Score(kind: skCp, cp: 100),
       Score(kind: skMate, mate: 3),
-      Score(kind: skMateGiven),
     ]
     check scores[0] < scores[1]
     check scores[1] < scores[2]
     check scores[2] < scores[3]
     check scores[3] < scores[4]
-    check scores[4] < scores[5]
     check scores[2] > scores[1]
     check scores[1] == scores[1]
     check scores[4] == scores[4]
-    check scores[4] != scores[5]
     check scores[3] != scores[4]
-    check scores[4] <= scores[5]
     check scores[1] >= scores[1]
 
   test "Limit creation":
