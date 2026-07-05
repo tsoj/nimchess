@@ -1,6 +1,6 @@
 # Package
 
-version = "0.9.0"
+version = "0.10.0"
 author = "Jost Triller"
 description = "A chess library for Nim"
 license = "LGPL-3.0-linking-exception"
