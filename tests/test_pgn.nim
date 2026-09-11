@@ -133,7 +133,6 @@ suite "PGN Parser Tests":
     let game = games[0]
 
     # Check that castling moves are parsed correctly
-    var pos = game.startPosition
     check game.moves[7].isCastling # black's O-O
     check game.moves[8].isCastling # whites's O-O-O
 

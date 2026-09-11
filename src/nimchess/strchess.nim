@@ -282,12 +282,14 @@ func toSAN*(move: Move, position: Position): string =
   if moved != pawn:
     result = moved.notation.toUpperAscii
 
-  for (fromFile, fromRank) in [
+  for candidate in [
     (none char, none char),
     (some moveFile, none char),
     (none char, some moveRank),
     (some moveFile, some moveRank),
   ]:
+    let (fromFile, fromRank) = candidate
+
     proc isDisambiguated(): bool =
       if moved == pawn and fromFile.isNone and captured != noPiece:
         return false
