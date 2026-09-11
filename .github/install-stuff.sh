@@ -15,18 +15,18 @@ PLATFORM="$(uname -s)-$(uname -m)"
 case "$PLATFORM" in
   Linux-x86_64)
     OS=linux
-    FC_URL="https://github.com/Disservin/fastchess/releases/download/v1.8.0-alpha/fastchess-linux-x86-64.tar"
-    FC_SHA="23bc3774213a2e7db2755510ac974eb5bdc8397867ab1805cc57ccb8c635ba07"
+    FC_URL="https://github.com/Disservin/fastchess/releases/download/v1.8.2-alpha/fastchess-linux-x86-64.tar"
+    FC_SHA="1003f920bebe841acdab5e6d7871e93171a4586857b3ec91c21ef5777f26ff96"
     ;;
   Darwin-arm64)
     OS=macos
-    FC_URL="https://github.com/Disservin/fastchess/releases/download/v1.8.0-alpha/fastchess-mac-arm64.tar"
-    FC_SHA="5f5a313b8f8d6222a9914ba76f000197e3bfb3c919a12b9e92e6ac5d516b91fc"
+    FC_URL="https://github.com/Disservin/fastchess/releases/download/v1.8.2-alpha/fastchess-mac-arm64.tar"
+    FC_SHA="a736371b1df3d7c67d4288dee66f6bb4e7e8193a945639c8a1d0aabfa612b551"
     ;;
   MINGW*|MSYS*|CYGWIN*)
     OS=windows
-    FC_URL="https://github.com/Disservin/fastchess/releases/download/v1.8.0-alpha/fastchess-windows-x86-64.zip"
-    FC_SHA="dcd5ad5c72237410f54dfc6e1af59f1088e72c2f67c29244fc974100791f3d13"
+    FC_URL="https://github.com/Disservin/fastchess/releases/download/v1.8.2-alpha/fastchess-windows-x86-64.zip"
+    FC_SHA="007ce550dc809510b34622a1aeb43fd443d40284045bef5c1bc39c8941114143"
     ;;
   *)
     echo "Unsupported platform: $PLATFORM" >&2
@@ -65,7 +65,7 @@ extract() {
 echo "Downloading fastchess"
 FC_EXT="${FC_URL##*.}"
 FC_ARCHIVE="$(mktemp).${FC_EXT}"
-curl -sL -o "$FC_ARCHIVE" "$FC_URL"
+curl -fsSL -o "$FC_ARCHIVE" "$FC_URL"
 sha256check "$FC_ARCHIVE" "$FC_SHA"
 
 FC_TMPDIR="$(mktemp -d)"
@@ -95,9 +95,11 @@ case "$OS" in
     STOCKFISH_BIN="$(command -v stockfish)"
     ;;
   windows)
-    SF_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-windows-x86-64-avx2.zip"
+    SF_URL="https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-windows-x86-64-universal.zip"
+    SF_SHA="3c8bf1f9ea66a09350a40df4f632288285ac206d99f33ab5842c408fc30b48a7"
     SF_ARCHIVE="$(mktemp)"
-    curl -sL -o "$SF_ARCHIVE" "$SF_URL"
+    curl -fsSL -o "$SF_ARCHIVE" "$SF_URL"
+    sha256check "$SF_ARCHIVE" "$SF_SHA"
 
     SF_TMPDIR="$(mktemp -d)"
     unzip -o "$SF_ARCHIVE" -d "$SF_TMPDIR"
